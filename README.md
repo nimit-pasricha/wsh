@@ -1,129 +1,101 @@
-# 🧭 CS 537 Assignment Workflow
+# Project 2 - Building a shell in C
 
-Welcome to your personal repository for a CS 537 assignment! This repository is a **fork** of the official base repository (e.g., `p1-base`) and is your private workspace for development and submission.
+This is an individual programming project to help you practice and develop
+your understanding of the Process API in C. You will be building a simple
+toy shell that can execute commands, similar to the one you use every day.
 
-Whether you're working individually or in a team, this guide explains how to stay in sync and structure your workflow correctly.
+## Project Administration and Policies
 
----
+> [!important]
+>
+> **Due date:** Tuesday, September 30th 2025, 11:59 PM
+>
+> Follow all CS537 [project policies](Admin.md)
 
-## 🔑 Setting Up GitLab Token
+## Project Workflow
 
-To interact smoothly with GitLab repositories, you'll need a Personal Access Token (PAT):
+Your solution code will be tested in
+the [CS537 Docker container](https://git.doit.wisc.edu/cdis/cs/courses/cs537/useful-resources/cs537-docker).
+If you do not already have your container setup, follow the instructions in that repository to create the proper environment.
+After following those instructions you should have a `cs537-projects/`
+directory where you can clone **all** of the projects for this course.
 
-1. **Create a PAT** on GitLab:
+Follow the suggested [workflow](Workflow.md) for development of your solution.
 
-   - Go to **Settings → Access Tokens**.
-   - Generate a token with at least `read_repository` and `write_repository` permissions.
+--------------------------------------------------------------------------------
 
-2. **Store the PAT securely**:
+## Project Instructions
 
-   - Create a hidden file in your home directory (recommended):
+> [!warning]
+> **⚠️This project will be checked for memory leaks!⚠️**
+>
+> - Your shell must properly free all allocated memory before exiting.
+> - Use tools like `valgrind` or `gcc --sanitize=address` to check for
+    > memory leaks.
+>
+> Example: `valgrind --leak-check=full --show-leak-kinds=all 
+> --track-origins=yes ./wsh`
 
-   ```bash
-   echo "<your-token>" > ~/.gl_cs537
-   chmod 600 ~/.gl_cs537
-   ```
+### Background: What is a Shell?
 
-   - Or you can run the following commands which does the above automatically:
+A **shell** is a command-line tool that acts as an interface between the users
+and the operating system. When you type commands in a terminal, you are
+actually interacting with a shell program (e.g., `bash`, `zsh`, `fish`, etc.).
 
-   ```bash
-   echo "Enter your GitLab token: "; read -s GITLAB_TOKEN; echo "$GITLAB_TOKEN" > ~/.gl_cs537; chmod 600 ~/.gl_cs537
-   ```
+The shell reads your input, interprets(parses) your commands, executes them
+and displays the output back to you.
 
-3. **Cloning with PAT**:
+### Learning Objectives for this Project
 
-   - You can directly clone your forked repository using your NetID and token via HTTP. For example:
+In this project, you will build a simple Unix shell called `wsh`. The shell
+is the heart of the command-line interface, and thus is central to the
+Unix/C programming environment. Knowing how the shell itself is built is the
+focus of this project. Specifically, you will learn about:
 
-   ```bash
-   git clone https://<your-netid>:<your-token>@<repository-url>
-   ```
+- Process creation and management using system calls like `fork()`, `exec()`,
+  and `wait()`.
+- Communication between processes using pipes.
+- The shell and its internals.
 
-   - Alternatively, run this to manually enter your credentials (assumes you have stored your token in `~/.gl_cs537`):
+### Features of `wsh`
 
-   ```bash
-   echo "Enter your NetID: "; read NETID; echo "Enter the repository URL (e.g. https://gitlab.com/namespace/project.git): "; read REPO_URL; STRIPPED_URL=${REPO_URL#https://}; TOKEN=$(< ~/.gl_cs537); git clone "https://${NETID}:${TOKEN}@${STRIPPED_URL}"
-   ```
+Your shell, `wsh` should support the following features. Treat these as
+checkpoints for your implementation as well as the requirements for your
+final submission. We strongly recommend doing a second pass to check if all
+the components are working together correctly.
 
----
+> [!important]
+>
+> The grader will do a direct diff between your output/error/rc and the
+> expected output/error/rc. To help you with this, you can use the provided
+> preprocessor directives in `wsh.h` for the error messages. We have also
+> created a function `wsh_warn` to help you print to `stderr` easily.
+>
+> **Examples**
+> ```c++
+> // Lets say you have a string variable `cmd`
+> char* cmd = "NonExistentCommand";
+> // You can do something like this to print the error message:
+> wsh_warn(CMD_NOT_FOUND, cmd);
+> 
+> // This works because we have defined CMD_NOT_FOUND in wsh.h as
+> #define CMD_NOT_FOUND "Command not found or not an executable: %s\n"
+> // We have setup the wsh_warn as a wrapper around vfprintf to print to 
+> // let you use string formatting with it.
+> ```
+>
+> *Sidenote:* I call it `wsh_warn` because even if something goes wrong with
+> a command, the shell doesn't actually "crash" or "fail", it just prints a
+> warning and continues with the next command.
+>
 
-## 🔄 Keeping Your Fork Up to Date
+1. [Modes of Execution](instructions/01_modes_of_execution.md)
+2. [Executing External Commands](instructions/02_executing_external_commands.md)
+3. [Builtin Commands](instructions/03_builtin_commands.md)
+4. [Supporting Pipelines](instructions/04_pipelines.md)
+5. [Supporting Command Substitution](instructions/05_command_subst.md)
 
-This repository is a fork, so it's your responsibility to **pull updates** (e.g., new test cases or spec changes) from the base repository when notified through the class that the base repository has been updated.
-
-### 🛠️ Sync Using Git GUI:
-
-You can click the "Update Fork" button whenever there is an update in the base repository.
-![Update Fork Example Image](assets/update-fork.png)
-
-### 🔧 Handling Merge Conflicts (Git CLI):
-
-Sometimes, there might be merge conflicts that Git GUI cannot handle. Use Git CLI to manually sync:
-
-```bash
-# Fetch the latest changes
-git fetch upstream
-
-# Merge into your fork
-git merge upstream/main
-
-# Resolve conflicts, then stage the changes:
-git add <conflicted-files>
-
-# Commit the resolved merge
-git commit
-
-# Push updates to your fork
-git push
-```
-
-> 🚨 **Tip**: Always run `git pull` / `git fetch` before starting new development.
-
----
-
-## 💡 Development Tips (Optional)
-
-> These are just suggestions—feel free to follow your preferred workflow.
-
-### Individual Repositories
-
-If you're working alone, you can push commits directly to the `main` branch:
-
-```bash
-# Stage and commit your changes
-git add .
-git commit -m "Implemented part A"
-
-# Push to main
-git push origin main
-```
-
-### Team Repositories
-
-When collaborating, it's often helpful to isolate features on branches:
-
-```bash
-# Create a personal feature branch
-git checkout -b <your-netid>-feature
-
-# Work on your changes, then stage and commit
-git add .
-git commit -m "Work on feature X"
-
-# Push your branch and open a merge request
-git push -u origin <your-netid>-feature
-```
-
-> You can then open a merge request into `main` for team review.
-
----
-
-## 📝 Submissions
-
-- The code in your repository will be pulled on the assignment's due date and the main branch will be used for grading.  Any changes to the repository after it has been pulled will not be graded.
-
----
-
-## 🔔 Reminders
-
-- Keep your fork synced regularly.
-- Monitor announcements for important updates.
+At this point, your shell should be able to handle a variety of commands. We
+would recommend testing your shell with a variety of commands to ensure it
+works as expected. Try combining different features and see if your shell is
+handling them correctly.

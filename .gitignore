@@ -1,0 +1,7 @@
+**/.DS_Store
+.idea/
+.vscode/
+tests/tests-out/
+solution/build/
+solution/wsh
+solution/wsh-dbg

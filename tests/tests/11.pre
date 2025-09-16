@@ -1,0 +1,1 @@
+mkdir -p /tmp/testcd/subdir; echo "hello" > /tmp/testcd/file.txt

@@ -1,0 +1,3 @@
+cd ../solution
+make clean && make
+cd ../tests

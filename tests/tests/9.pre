@@ -1,0 +1,2 @@
+rm -f tmp/echo tmp/cat
+
