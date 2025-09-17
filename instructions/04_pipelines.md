@@ -67,9 +67,9 @@ flowchart TD
 ## Handling Errors
 
 - If any of the segments of the pipe is/are empty, your shell should print
-  `Empty commmand segement in pipeline\n` to `stderr`, and not execute the
+  `Empty commmand segment in pipeline\n` to `stderr`, and not execute the
   pipeline.
-- If any of commands in the segments of the pipe are not found (not a
+- If any of the commands in the segments of the pipe are not found (not a
   builtin or executable), your shell should print the error message 'Command
   not found or not an executable: %s\n' for each command not found, where `%s`
   is the command. Do not execute the pipeline in this case.
@@ -96,4 +96,4 @@ flowchart TD
   - `path | tr 'a-z' 'A-Z'` - This will print the current PATH in uppercase.
   - `wc -L file1.txt file2.txt file3.txt | sort -n` - This will count the
     longest line in each file and sort the output.
-- Experiment with different commands and see how they can be combined using
+- Experiment with different commands and see how they can be combined using pipe.
