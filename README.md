@@ -93,7 +93,6 @@ the components are working together correctly.
 2. [Executing External Commands](instructions/02_executing_external_commands.md)
 3. [Builtin Commands](instructions/03_builtin_commands.md)
 4. [Supporting Pipelines](instructions/04_pipelines.md)
-5. [Supporting Command Substitution](instructions/05_command_subst.md)
 
 At this point, your shell should be able to handle a variety of commands. We
 would recommend testing your shell with a variety of commands to ensure it
