@@ -10,7 +10,7 @@ typedef struct {
 DynamicArray* da_create(size_t init_capacity);
 
 // Add element to Dynamic Array at the end. Handles resizing if necessary
-void da_put(DynamicArray *da, const char* val);
+void da_put(DynamicArray *da, char* val);
 
 // Get element at an index (NULL if not found)
 char *da_get(DynamicArray *da, const size_t ind);
