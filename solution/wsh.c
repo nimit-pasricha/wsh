@@ -97,7 +97,6 @@ void interactive_main(void) {
     char input[MAX_LINE];
     if (fgets(input, sizeof(input), stdin) == NULL) {
       fprintf(stderr, "fgets error\n");
-      wsh_free();
       clean_exit(EXIT_FAILURE);
     }
 
@@ -160,7 +159,7 @@ int batch_main(const char *script_file) {
     } else if (rc == 0) {
       execvp(argv[0], argv);
       wsh_warn(CMD_NOT_FOUND, argv[0]);
-      fclose(sfp);
+      fclose(sfp); //  TODO: I have no idea why this works.
       return EXIT_FAILURE;
     } else {
       wait(NULL);
