@@ -4,11 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * TODO: Implement all the methods with declarations in dynamic_array.h here,
- * before proceeding with your project
- */
-
 // Create a new DynamicArray with given initial capacity
 DynamicArray *da_create(size_t init_capacity) {
   DynamicArray *da = malloc(sizeof(DynamicArray));
