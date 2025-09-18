@@ -107,7 +107,7 @@ void interactive_main(void) {
 
     int rc = fork();
     if (rc < 0) {
-      fprintf(stderr, "fork failed\n");
+      fprintf(stderr, "fork error\n");
       exit(1);
     } else if (rc == 0) {
       char *args[MAX_ARGS + 1];
