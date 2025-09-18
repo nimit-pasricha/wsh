@@ -1,5 +1,6 @@
 #include "wsh.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -97,29 +98,25 @@ void interactive_main(void) {
     if (fgets(input, sizeof(input), stdin) == NULL) {
       fprintf(stderr, "fgets error\n");
       wsh_free();
-      exit(1);
+      clean_exit(EXIT_FAILURE);
     }
 
-    //  remove \n from end of input
-    input[strcspn(input, "\n")] = '\0';
+    char *argv[MAX_ARGS + 1];
+    int argc;
+    parseline_no_subst(input, argv, &argc);
 
-    if (strcmp(input, "exit") == 0) {
+    if (strcmp(argv[0], "exit") == 0) {
       break;
     }
 
     int rc = fork();
     if (rc < 0) {
       fprintf(stderr, "fork error\n");
-      exit(1);
+      clean_exit(EXIT_FAILURE);
     } else if (rc == 0) {
-      char *argv[MAX_ARGS + 1];
-      int argc;
-
-      parseline_no_subst(input, argv, &argc);
-
       execvp(argv[0], argv);
       wsh_warn(CMD_NOT_FOUND, argv[0]);
-      exit(1);
+      clean_exit(EXIT_FAILURE);
     } else {
       wait(NULL);
     }
@@ -127,7 +124,6 @@ void interactive_main(void) {
     fflush(stderr);
     fflush(stdout);
   }
-  wsh_free();
 }
 
 /**
@@ -142,37 +138,36 @@ int batch_main(const char *script_file) {
   FILE *sfp = fopen(script_file, "r");
   if (sfp == NULL) {
     perror("fopen");
-    exit(1);
+    return EXIT_FAILURE;
   }
 
   char command[MAX_LINE];
 
+  
   while (fgets(command, sizeof(command), sfp)) {
-    command[strcspn(command, "\n")] = '\0';
+    char *argv[MAX_ARGS + 1];
+    int argc;
+    parseline_no_subst(command, argv, &argc);
 
-    if (strcmp(command, "exit") == 0) {
+    if (strcmp(argv[0], "exit") == 0) {
       break;
     }
 
     int rc = fork();
     if (rc < 0) {
       fprintf(stderr, "fork error\n");
-      exit(1);
+      return EXIT_FAILURE;
     } else if (rc == 0) {
-      char *argv[MAX_ARGS];
-      int argc;
-
-      parseline_no_subst(command, argv, &argc);
-
       execvp(argv[0], argv);
       wsh_warn(CMD_NOT_FOUND, argv[0]);
-      exit(1);
+      fclose(sfp);
+      return EXIT_FAILURE;
     } else {
       wait(NULL);
     }
   }
-
-  return 0;
+  fclose(sfp);
+  return EXIT_SUCCESS;
 }
 
 /***************************************************
@@ -189,7 +184,7 @@ int batch_main(const char *script_file) {
  * @param argc Pointer to store the number of parsed arguments
  */
 void parseline_no_subst(const char *cmdline, char **argv, int *argc) {
-  if (!cmdline) {
+  if (!cmdline) { 
     *argc = 0;
     argv[0] = NULL;
     return;
