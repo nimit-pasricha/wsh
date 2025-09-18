@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 
 #include "dynamic_array.h"
 #include "hash_map.h"
@@ -90,18 +91,42 @@ int main(int argc, char **argv) {
  */
 void interactive_main(void) {
   while (1) {
-    printf("wsh> ");
+    printf("%s", PROMPT);
 
     char input[MAX_LINE];
     if (fgets(input, MAX_LINE, stdin) == NULL) {
       fprintf(stderr, "fgets error\n");
     }
-    
-    if (strcmp(input, "exit\n") == 0) {
+
+    input[strcspn(input, "\n")] = '\0';
+
+    if (strcmp(input, "exit") == 0) {
       break;
     }
 
-    printf("%s", input);
+
+    int rc = fork();
+    if (rc < 0) {
+      fprintf(stderr, "fork failed\n");
+      exit(1);
+    } else if (rc == 0) {
+      char *args[MAX_ARGS + 1];
+
+      int i = 0;
+      char *arg = strtok(input, " ");
+      args[i++] = arg;
+      while ((arg = strtok(NULL, " ")) != NULL) {
+        args[i++] = arg;
+      }
+      args[i] = NULL;
+      execvp(args[0], args);
+      printf("%s", CMD_NOT_FOUND);
+    } else {
+      wait(NULL);
+    }
+
+    fflush(stderr);
+    fflush(stdout);
   }
 }
 
