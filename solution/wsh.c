@@ -89,16 +89,20 @@ int main(int argc, char **argv) {
  * execute the given input and repeat
  */
 void interactive_main(void) {
-  int should_exit = 0;
-  while (!should_exit) {
+  while (1) {
     printf("wsh> ");
+
     char input[MAX_LINE];
     if (fgets(input, MAX_LINE, stdin) == NULL) {
       fprintf(stderr, "fgets error\n");
     }
+    
+    if (strcmp(input, "exit\n") == 0) {
+      break;
+    }
+
     printf("%s", input);
   }
-  // TODO: Implement interactive mode here
 }
 
 /**
