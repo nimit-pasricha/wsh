@@ -123,7 +123,7 @@ void interactive_main(void) {
       args[i] = NULL;
 
       execvp(args[0], args);
-      printf("%s", CMD_NOT_FOUND);
+      wsh_warn(CMD_NOT_FOUND, args[0]);
     } else {
       wait(NULL);
     }
@@ -143,8 +143,43 @@ void interactive_main(void) {
  */
 
 int batch_main(const char *script_file) {
+  FILE *sfp = fopen(script_file, "r");
+  if (sfp == NULL) {
+    perror("fopen");
+    exit(1);
+  }
+
   char command[MAX_LINE];
 
+  while (fgets(command, sizeof(command), sfp)) {
+    command[strcspn(command, "\n")] = '\0';
+
+    if (strcmp(command, "exit") == 0) {
+      break;
+    }
+
+    int rc = fork();
+    if (rc < 0) {
+      fprintf(stderr, "fork error\n");
+      exit(1);
+    } else if (rc == 0) {
+      char *args[MAX_ARGS];
+
+      int i = 0;
+      char *arg = strtok(command, " ");
+      args[i++] = arg;
+      while ((arg = strtok(NULL, " ")) != NULL) {
+        args[i++] = arg;
+      }
+      args[i] = NULL;
+
+      execvp(args[0], args);
+      wsh_warn(CMD_NOT_FOUND, args[0]);
+      // exit(1); // TODO: figure out if I should stop if command fails.
+    } else {
+      wait(NULL);
+    }
+  }
 
   return 0;
 }
