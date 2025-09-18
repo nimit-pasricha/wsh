@@ -96,14 +96,16 @@ void interactive_main(void) {
     char input[MAX_LINE];
     if (fgets(input, MAX_LINE, stdin) == NULL) {
       fprintf(stderr, "fgets error\n");
+      wsh_free();
+      exit(1);
     }
 
+    //  remove \n from end of input
     input[strcspn(input, "\n")] = '\0';
 
     if (strcmp(input, "exit") == 0) {
       break;
     }
-
 
     int rc = fork();
     if (rc < 0) {
@@ -119,6 +121,7 @@ void interactive_main(void) {
         args[i++] = arg;
       }
       args[i] = NULL;
+
       execvp(args[0], args);
       printf("%s", CMD_NOT_FOUND);
     } else {
@@ -128,6 +131,7 @@ void interactive_main(void) {
     fflush(stderr);
     fflush(stdout);
   }
+  wsh_free();
 }
 
 /**
