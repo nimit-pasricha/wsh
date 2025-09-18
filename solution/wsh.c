@@ -94,7 +94,7 @@ void interactive_main(void) {
     printf("%s", PROMPT);
 
     char input[MAX_LINE];
-    if (fgets(input, MAX_LINE, stdin) == NULL) {
+    if (fgets(input, sizeof(input), stdin) == NULL) {
       fprintf(stderr, "fgets error\n");
       wsh_free();
       exit(1);
@@ -143,8 +143,9 @@ void interactive_main(void) {
  */
 
 int batch_main(const char *script_file) {
-  // TODO: Implement batch mode here
-  printf("%s\n", script_file);
+  char command[MAX_LINE];
+
+
   return 0;
 }
 
