@@ -112,18 +112,14 @@ void interactive_main(void) {
       fprintf(stderr, "fork error\n");
       exit(1);
     } else if (rc == 0) {
-      char *args[MAX_ARGS + 1];
+      char *argv[MAX_ARGS + 1];
+      int argc;
 
-      int i = 0;
-      char *arg = strtok(input, " ");
-      args[i++] = arg;
-      while ((arg = strtok(NULL, " ")) != NULL) {
-        args[i++] = arg;
-      }
-      args[i] = NULL;
+      parseline_no_subst(input, argv, &argc);
 
-      execvp(args[0], args);
-      wsh_warn(CMD_NOT_FOUND, args[0]);
+      execvp(argv[0], argv);
+      wsh_warn(CMD_NOT_FOUND, argv[0]);
+      exit(1);
     } else {
       wait(NULL);
     }
@@ -163,19 +159,14 @@ int batch_main(const char *script_file) {
       fprintf(stderr, "fork error\n");
       exit(1);
     } else if (rc == 0) {
-      char *args[MAX_ARGS];
+      char *argv[MAX_ARGS];
+      int argc;
 
-      int i = 0;
-      char *arg = strtok(command, " ");
-      args[i++] = arg;
-      while ((arg = strtok(NULL, " ")) != NULL) {
-        args[i++] = arg;
-      }
-      args[i] = NULL;
+      parseline_no_subst(command, argv, &argc);
 
-      execvp(args[0], args);
-      wsh_warn(CMD_NOT_FOUND, args[0]);
-      // exit(1); // TODO: figure out if I should stop if command fails.
+      execvp(argv[0], argv);
+      wsh_warn(CMD_NOT_FOUND, argv[0]);
+      exit(1);
     } else {
       wait(NULL);
     }
