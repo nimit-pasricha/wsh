@@ -24,3 +24,11 @@ void da_put(DynamicArray *da, const char *val) {
 
   da->data[da->size++] = val;
 }
+
+char *da_get(DynamicArray *da, const size_t ind) {
+    if (ind < 0 || ind >= da->size) {
+        return NULL;
+    }
+
+    return da->data[ind];
+}
