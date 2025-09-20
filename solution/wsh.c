@@ -85,7 +85,12 @@ int main(int argc, char **argv) {
 
 char *get_command_path(char *command) {
   if (command[0] == '.' || command[0] == '/') {
-    return strdup(command);
+    char *res = strdup(command);
+    if (res == NULL) {
+      perror("strdup");
+      clean_exit(1);
+    }
+    return res;
   }
 
   char *path = getenv("PATH");
