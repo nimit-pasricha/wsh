@@ -89,6 +89,11 @@ char *get_command_path(char *command) {
   }
 
   char *path = getenv("PATH");
+  if (path == NULL || *path == '\0') {
+    wsh_warn(EMPTY_PATH);
+    return NULL;
+  }
+
   char *token = strtok(path, ":");
 
   char *command_path = NULL;
@@ -104,6 +109,7 @@ char *get_command_path(char *command) {
   }
 
   free(command_path);
+  wsh_warn(CMD_NOT_FOUND, command);
   return NULL;
 }
 
@@ -144,8 +150,8 @@ void interactive_main(void) {
       if (full_path != NULL) {
         execv(full_path, argv);
         free(full_path);
+        wsh_warn(CMD_NOT_FOUND, argv[0]);
       }
-      wsh_warn(CMD_NOT_FOUND, argv[0]);
       for (int i = 0; i < argc; i++) free(argv[i]);
       clean_exit(EXIT_FAILURE);
     } else {
@@ -195,9 +201,9 @@ int batch_main(const char *script_file) {
       if (full_path != NULL) {
         execv(full_path, argv);
         free(full_path);
+        wsh_warn(CMD_NOT_FOUND, argv[0]);
       }
-      wsh_warn(CMD_NOT_FOUND, argv[0]);
-      fclose(sfp);  //  TODO: I have no idea why this works.
+      fclose(sfp);
       for (int i = 0; i < argc; i++) free(argv[i]);
       clean_exit(EXIT_FAILURE);
     } else {
