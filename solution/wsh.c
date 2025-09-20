@@ -260,6 +260,30 @@ int unalias(char *argv[], int argc)
   return 1;
 }
 
+int which_command(char *argv[], int argc)
+{
+  printf("%d\n", argc);
+  char *name = argv[1];
+  char *res;
+  if ((res = hm_get(alias_hm, name)) != NULL)
+  {
+    printf(WHICH_ALIAS, name, res);
+    return 0;
+  }
+
+  char *builtins[7] = {"exit", "alias", "unalias", "which", "path", "cd", "history"};
+  for (int i = 0; i < 7; i++)
+  {
+    if (strcmp(builtins[i], argv[1]))
+    {
+      printf(WHICH_BUILTIN, builtins[i]);
+      return 0;
+    }
+  }
+
+  return 0;
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -318,6 +342,10 @@ void interactive_main(void)
       {
         wsh_warn(INVALID_UNALIAS_USE);
       }
+    }
+    else if (strcmp(argv[0], "which") == 0)
+    {
+      which_command(argv, argc);
     }
     else
     {
