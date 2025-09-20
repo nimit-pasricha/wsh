@@ -232,13 +232,11 @@ void substitute_alias(char *argv[], int *argc)
       keep_going = 0;
     }
 
+    hm_put(seen_elements, argv[0], "");
+
     memmove(argv + new_argc - 1, argv, *argc * sizeof(char *));
     memmove(argv, new_argv, new_argc * sizeof(char *));
     command = hm_get(alias_hm, argv[0]);
-
-    char *curr_alias = strdup(argv[0]);
-    hm_put(seen_elements, curr_alias, "");
-    free(curr_alias);
   }
   *argc += new_argc - 1;
   argv[*argc] = NULL;
@@ -275,6 +273,7 @@ void interactive_main(void)
       continue;
     }
 
+    printf("%s\n", argv[0]);
     substitute_alias(argv, &argc);
 
     if (strcmp(argv[0], "exit") == 0)
@@ -293,6 +292,7 @@ void interactive_main(void)
     }
     else
     {
+      printf("%s\n", argv[0]);
       int rc = fork();
       if (rc < 0)
       {
