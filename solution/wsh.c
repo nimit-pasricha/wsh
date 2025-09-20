@@ -201,9 +201,10 @@ int create_alias(char *argv[], int argc)
 }
 
 // TODO: handle circular alias loop.
-// TODO: handle printing all aliases.
 void substitute_alias(char *argv[], int *argc)
 {
+  HashMap *seen_elements = hm_create();
+
   char *new_argv[MAX_ARGS];
   int new_argc = 1;
   char *command = hm_get(alias_hm, argv[0]);
@@ -219,6 +220,13 @@ void substitute_alias(char *argv[], int *argc)
       return;
     }
 
+    // Prevent infinite loop in case of circular alias.
+    if (hm_get(seen_elements, argv[0]) != NULL)
+    {
+      return;
+    }
+
+    // Prevent infinite loop. (eg: alias ls = 'ls -l')
     if (strcmp(new_argv[0], argv[0]) == 0)
     {
       keep_going = 0;
@@ -227,6 +235,10 @@ void substitute_alias(char *argv[], int *argc)
     memmove(argv + new_argc - 1, argv, *argc * sizeof(char *));
     memmove(argv, new_argv, new_argc * sizeof(char *));
     command = hm_get(alias_hm, argv[0]);
+
+    char *curr_alias = strdup(argv[0]);
+    hm_put(seen_elements, curr_alias, "");
+    free(curr_alias);
   }
   *argc += new_argc - 1;
   argv[*argc] = NULL;
