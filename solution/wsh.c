@@ -14,7 +14,7 @@
 #include "utils.h"
 
 int rc;
-HashMap *alias_hm = NULL;
+HashMap *alias_hm;
 
 /***************************************************
  * Helper Functions
@@ -130,6 +130,27 @@ char *get_command_path(char *command)
   return NULL;
 }
 
+int exit_shell(char *argv[], int argc)
+{
+  if (argc == 1)
+  {
+    for (int i = 0; i < argc; i++)
+    {
+      free(argv[i]);
+    }
+    return 0;
+  }
+  else
+  {
+    wsh_warn(INVALID_EXIT_USE);
+    for (int i = 0; i < argc; i++)
+    {
+      free(argv[i]);
+    }
+    return 1;
+  }
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -163,21 +184,12 @@ void interactive_main(void)
     // Handle "exit"
     if (strcmp(argv[0], "exit") == 0)
     {
-      if (argc == 1)
+      if (exit_shell(argv, argc) == 0)
       {
-        for (int i = 0; i < argc; i++)
-        {
-          free(argv[i]);
-        }
         clean_exit(EXIT_SUCCESS);
       }
       else
       {
-        wsh_warn(INVALID_EXIT_USE);
-        for (int i = 0; i < argc; i++)
-        {
-          free(argv[i]);
-        }
         continue;
       }
     }
@@ -253,21 +265,12 @@ int batch_main(const char *script_file)
     // Handle "exit"
     if (strcmp(argv[0], "exit") == 0)
     {
-      if (argc == 1)
+      if (exit_shell(argv, argc) == 0)
       {
-        for (int i = 0; i < argc; i++)
-        {
-          free(argv[i]);
-        }
         clean_exit(EXIT_SUCCESS);
       }
       else
       {
-        wsh_warn(INVALID_EXIT_USE);
-        for (int i = 0; i < argc; i++)
-        {
-          free(argv[i]);
-        }
         continue;
       }
     }
