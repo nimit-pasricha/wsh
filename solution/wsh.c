@@ -191,7 +191,11 @@ int batch_main(const char *script_file) {
       for (int i = 0; i < argc; i++) free(argv[i]);
       clean_exit(EXIT_FAILURE);
     } else if (rc == 0) {
-      execvp(argv[0], argv);
+      char *full_path = get_command_path(argv[0]);
+      if (full_path != NULL) {
+        execv(full_path, argv);
+        free(full_path);
+      }
       wsh_warn(CMD_NOT_FOUND, argv[0]);
       fclose(sfp);  //  TODO: I have no idea why this works.
       for (int i = 0; i < argc; i++) free(argv[i]);
