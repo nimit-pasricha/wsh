@@ -152,9 +152,26 @@ int exit_shell(int argc)
 // TODO: make const.
 int create_alias(char *argv[], int argc)
 {
-  if (argc != 4 || strcmp(argv[2], "=") != 0 || *argv[1] == '\0')
+  if (argc > 4)
   {
-    wsh_warn(INVALID_ALIAS_USE);
+    return 1;
+  }
+
+  int found_equals_at_correct_spot = 0;
+  for (int i = 0; i < argc; i++)
+  {
+    if (strcmp(argv[i], "=") == 0)
+    {
+      if (i != 2)
+      {
+        return 1;
+      }
+      found_equals_at_correct_spot = 1;
+    }
+  }
+
+  if (!found_equals_at_correct_spot)
+  {
     return 1;
   }
 
@@ -163,9 +180,14 @@ int create_alias(char *argv[], int argc)
   {
     if (isspace(name[i]))
     {
-      wsh_warn(INVALID_ALIAS_USE);
       return 1;
     }
+  }
+
+  if (argc == 3)
+  {
+    argv[4] = NULL;
+    argv[3] = "";
   }
 
   hm_put(alias_hm, name, argv[3]);
@@ -173,6 +195,7 @@ int create_alias(char *argv[], int argc)
 }
 
 // TODO: handle circular alias loop.
+// TODO: handle printing all aliases.
 void substitute_alias(char *argv[], int *argc)
 {
   char *new_argv[MAX_ARGS];
@@ -182,6 +205,13 @@ void substitute_alias(char *argv[], int *argc)
   while (command != NULL && keep_going)
   {
     parseline_no_subst(command, new_argv, &new_argc);
+
+    if (new_argc == 0)
+    {
+      *argc = 0;
+      argv[1] = NULL;
+      return;
+    }
 
     if (strcmp(new_argv[0], argv[0]) == 0)
     {
@@ -238,7 +268,10 @@ void interactive_main(void)
     }
     else if (strcmp(argv[0], "alias") == 0)
     {
-      create_alias(argv, argc);
+      if (create_alias(argv, argc) == 1)
+      {
+        wsh_warn(INVALID_ALIAS_USE);
+      }
     }
     else
     {
