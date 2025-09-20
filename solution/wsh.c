@@ -288,6 +288,13 @@ int batch_main(const char *script_file)
         wsh_warn(INVALID_EXIT_USE);
       }
     }
+    else if (strcmp(argv[0], "alias") == 0)
+    {
+      if (create_alias(argv, argc) != 0)
+      {
+        wsh_warn(INVALID_ALIAS_USE);
+      }
+    }
     else
     {
       int rc = fork();
