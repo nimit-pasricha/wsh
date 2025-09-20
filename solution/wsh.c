@@ -138,19 +138,23 @@ void free_argv(char *argv[], int argc)
   }
 }
 
-int exit_shell(char *argv[], int argc)
+int exit_shell(int argc)
 {
-  if (argc == 1)
-  {
-    free_argv(argv, argc);
-    return 0;
-  }
-  else
+  if (argc > 1)
   {
     wsh_warn(INVALID_EXIT_USE);
-    free_argv(argv, argc);
     return 1;
   }
+  return 0;
+  // if (argc == 1)
+  // {
+  //   return 0;
+  // }
+  // else
+  // {
+  //   wsh_warn(INVALID_EXIT_USE);
+  //   return 1;
+  // }
 }
 
 /***************************************************
@@ -163,7 +167,8 @@ int exit_shell(char *argv[], int argc)
  */
 void interactive_main(void)
 {
-  while (1)
+  int keep_going = 1;
+  while (keep_going)
   {
     printf("%s", PROMPT);
 
@@ -180,50 +185,38 @@ void interactive_main(void)
 
     if (argc == 0)
     {
-      continue;
+      // Do nothing.
     }
-
-    // Handle "exit"
-    if (strcmp(argv[0], "exit") == 0)
+    else if (strcmp(argv[0], "exit") == 0)
     {
-      if (exit_shell(argv, argc) == 0)
+      if (exit_shell(argc) == 0)
       {
-        clean_exit(EXIT_SUCCESS);
+        keep_going = 0;
       }
-      else
-      {
-        continue;
-      }
-    }
-
-    // Handle "alias"
-    if (strcmp(argv[0], "alias") == 0)
-    {
-      // TODO: handle errors.
-    }
-
-    int rc = fork();
-    if (rc < 0)
-    {
-      perror("fork");
-      free_argv(argv, argc);
-      continue;
-    }
-    else if (rc == 0)
-    {
-      char *full_path = get_command_path(argv[0]);
-      if (full_path != NULL)
-      {
-        execv(full_path, argv);
-        free(full_path);
-        wsh_warn(CMD_NOT_FOUND, argv[0]);
-      }
-      free_argv(argv, argc);
-      clean_exit(EXIT_FAILURE);
     }
     else
     {
-      wait(NULL);
+      int rc = fork();
+      if (rc < 0)
+      {
+        perror("fork");
+      }
+      else if (rc == 0)
+      {
+        char *full_path = get_command_path(argv[0]);
+        if (full_path != NULL)
+        {
+          execv(full_path, argv);
+          free(full_path);
+          wsh_warn(CMD_NOT_FOUND, argv[0]);
+        }
+        free_argv(argv, argc);
+        clean_exit(EXIT_FAILURE);
+      }
+      else
+      {
+        wait(NULL);
+      }
     }
 
     free_argv(argv, argc);
@@ -264,7 +257,7 @@ int batch_main(const char *script_file)
     // Handle "exit"
     if (strcmp(argv[0], "exit") == 0)
     {
-      if (exit_shell(argv, argc) == 0)
+      if (exit_shell(argc) == 0)
       {
         fclose(sfp);
         clean_exit(EXIT_SUCCESS);
