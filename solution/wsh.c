@@ -168,6 +168,8 @@ int exit_shell(int argc)
 void interactive_main(void)
 {
   int keep_going = 1;
+  char *argv[MAX_ARGS + 1];
+  int argc;
   while (keep_going)
   {
     printf("%s", PROMPT);
@@ -179,8 +181,6 @@ void interactive_main(void)
       continue;
     }
 
-    char *argv[MAX_ARGS + 1];
-    int argc;
     parseline_no_subst(input, argv, &argc);
 
     if (argc == 0)
@@ -243,78 +243,65 @@ int batch_main(const char *script_file)
   }
 
   char command[MAX_LINE + 1];
-  while (fgets(command, sizeof(command), sfp) != NULL)
+  int keep_going = 1;
+  char *argv[MAX_ARGS + 1];
+  int argc;
+  while (fgets(command, sizeof(command), sfp) != NULL && keep_going)
   {
-    char *argv[MAX_ARGS + 1];
-    int argc;
+
     parseline_no_subst(command, argv, &argc);
 
     if (argc == 0)
     {
-      continue;
+      // Do nothing.
     }
-
-    // Handle "exit"
-    if (strcmp(argv[0], "exit") == 0)
+    else if (strcmp(argv[0], "exit") == 0)
     {
       if (exit_shell(argc) == 0)
       {
-        fclose(sfp);
-        clean_exit(EXIT_SUCCESS);
+        keep_going = 0;
       }
-      else
-      {
-        continue;
-      }
-    }
-
-    // Handle "alias"
-    if (strcmp(argv[0], "alias") == 0)
-    {
-      // TODO: handle errors.
-    }
-
-    int rc = fork();
-    if (rc < 0)
-    {
-      perror("fork");
-      fclose(sfp);
-      free_argv(argv, argc);
-      continue;
-    }
-    else if (rc == 0)
-    {
-      char *full_path = get_command_path(argv[0]);
-      if (full_path != NULL)
-      {
-        execv(full_path, argv);
-        free(full_path);
-        wsh_warn(CMD_NOT_FOUND, argv[0]);
-      }
-      fclose(sfp);
-      free_argv(argv, argc);
-      clean_exit(EXIT_FAILURE);
     }
     else
     {
-      wait(NULL);
+      int rc = fork();
+      if (rc < 0)
+      {
+        perror("fork");
+      }
+      else if (rc == 0)
+      {
+        char *full_path = get_command_path(argv[0]);
+        if (full_path != NULL)
+        {
+          execv(full_path, argv);
+          free(full_path);
+          wsh_warn(CMD_NOT_FOUND, argv[0]);
+        }
+        fclose(sfp);
+        free_argv(argv, argc);
+        clean_exit(EXIT_FAILURE);
+      }
+      else
+      {
+        wait(NULL);
+      }
     }
     free_argv(argv, argc);
   }
 
+  int res = EXIT_SUCCESS;
   if (feof(sfp))
   {
-    fclose(sfp);
-    return EXIT_SUCCESS;
+    res = EXIT_SUCCESS;
   }
   else if (ferror(sfp))
   {
     fprintf(stderr, "fgets error\n");
-    fclose(sfp);
-    return EXIT_FAILURE;
+    res = EXIT_FAILURE;
   }
-
-  return EXIT_SUCCESS;
+  fclose(sfp);
+  return res;
 }
 
 /***************************************************
