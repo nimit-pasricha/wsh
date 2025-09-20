@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "wsh.h"
 
 #include <assert.h>
@@ -82,6 +83,30 @@ int main(int argc, char **argv) {
   return rc;
 }
 
+char *get_command_path(char *command) {
+  if (command[0] == '.' || command[0] == '/') {
+    return strdup(command);
+  }
+
+  char *path = getenv("PATH");
+  char *token = strtok(path, ":");
+
+  char *command_path = NULL;
+  while (token != NULL) {
+    if (asprintf(&command_path, "%s/%s", token, command) < 0) {
+      free(command_path);
+      clean_exit(EXIT_FAILURE);
+    }
+    if (access(command_path, X_OK) == 0) {
+      return command_path;
+    }
+    token = strtok(NULL, ":");
+  }
+
+  free(command_path);
+  return NULL;
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -115,7 +140,11 @@ void interactive_main(void) {
       for (int i = 0; i < argc; i++) free(argv[i]);
       clean_exit(EXIT_FAILURE);
     } else if (rc == 0) {
-      execvp(argv[0], argv);
+      char *full_path = get_command_path(argv[0]);
+      if (full_path != NULL) {
+        execv(full_path, argv);
+        free(full_path);
+      }
       wsh_warn(CMD_NOT_FOUND, argv[0]);
       for (int i = 0; i < argc; i++) free(argv[i]);
       clean_exit(EXIT_FAILURE);
