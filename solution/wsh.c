@@ -245,7 +245,19 @@ int substitute_alias(char *argv[], int *argc)
   }
   *argc += new_argc - 1;
   argv[*argc] = NULL;
+  free(seen_elements);
   return 0;
+}
+
+int unalias(char *argv[], int argc)
+{
+  if (argc == 2)
+  {
+    hm_delete(alias_hm, argv[1]);
+    return 0;
+  }
+
+  return 1;
 }
 
 /***************************************************
@@ -272,11 +284,6 @@ void interactive_main(void)
       continue;
     }
 
-    if (argc == 0)
-    {
-      continue;
-    }
-
     parseline_no_subst(input, argv, &argc);
 
     if (argc == 0)
@@ -284,7 +291,9 @@ void interactive_main(void)
       continue;
     }
 
-    if (substitute_alias(argv, &argc) == 1)
+    substitute_alias(argv, &argc);
+
+    if (argc == 0)
     {
       continue;
     }
@@ -301,6 +310,13 @@ void interactive_main(void)
       if (create_alias(argv, argc) == 1)
       {
         wsh_warn(INVALID_ALIAS_USE);
+      }
+    }
+    else if (strcmp(argv[0], "unalias") == 0)
+    {
+      if (unalias(argv, argc) == 1)
+      {
+        wsh_warn(INVALID_UNALIAS_USE);
       }
     }
     else
@@ -388,6 +404,13 @@ int batch_main(const char *script_file)
       if (create_alias(argv, argc) != 0)
       {
         wsh_warn(INVALID_ALIAS_USE);
+      }
+    }
+    else if (strcmp(argv[0], "unalias") == 0)
+    {
+      if (unalias(argv, argc) == 1)
+      {
+        wsh_warn(INVALID_UNALIAS_USE);
       }
     }
     else
