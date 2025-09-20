@@ -140,6 +140,10 @@ void interactive_main(void) {
     int argc;
     parseline_no_subst(input, argv, &argc);
 
+    if (argc == 0) {
+      continue;
+    }
+
     if (strcmp(argv[0], "exit") == 0) {
       for (int i = 0; i < argc; i++) free(argv[i]);
       break;
@@ -189,6 +193,10 @@ int batch_main(const char *script_file) {
     char *argv[MAX_ARGS + 1];
     int argc;
     parseline_no_subst(command, argv, &argc);
+
+    if (argc == 0) {
+      continue;
+    }
 
     if (strcmp(argv[0], "exit") == 0) {
       for (int i = 0; i < argc; i++) free(argv[i]);
