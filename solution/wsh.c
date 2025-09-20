@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 #include "dynamic_array.h"
 #include "hash_map.h"
@@ -142,19 +143,29 @@ int exit_shell(int argc)
 {
   if (argc > 1)
   {
-    wsh_warn(INVALID_EXIT_USE);
     return 1;
   }
   return 0;
-  // if (argc == 1)
-  // {
-  //   return 0;
-  // }
-  // else
-  // {
-  //   wsh_warn(INVALID_EXIT_USE);
-  //   return 1;
-  // }
+}
+
+int create_alias(char *argv[], int argc)
+{
+  if (argc != 4 || strcmp(argv[2], "=") != 0 || *argv[1] == '\0')
+  {
+    return 1;
+  }
+
+  char *name = argv[1];
+  for (size_t i = 0; i < strlen(name); i++)
+  {
+    if (isspace(name[i]))
+    {
+      return 1;
+    }
+  }
+
+  hm_put(alias_hm, name, argv[3]);
+  return 0;
 }
 
 /***************************************************
@@ -192,6 +203,17 @@ void interactive_main(void)
       if ((rc = exit_shell(argc)) == 0)
       {
         keep_going = 0;
+      }
+      else
+      {
+        wsh_warn(INVALID_EXIT_USE);
+      }
+    }
+    else if (strcmp(argv[0], "alias") == 0)
+    {
+      if (create_alias(argv, argc) != 0)
+      {
+        wsh_warn(INVALID_ALIAS_USE);
       }
     }
     else
@@ -260,6 +282,10 @@ int batch_main(const char *script_file)
       if (exit_shell(argc) == 0)
       {
         keep_going = 0;
+      }
+      else
+      {
+        wsh_warn(INVALID_EXIT_USE);
       }
     }
     else
