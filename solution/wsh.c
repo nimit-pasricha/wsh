@@ -182,6 +182,11 @@ int create_alias(char *argv[], int argc)
   }
 
   char *name = argv[1];
+  if (strlen(name) == 0)
+  {
+    return 1;
+  }
+
   for (size_t i = 0; i < strlen(name); i++)
   {
     if (isspace(name[i]))
@@ -200,8 +205,7 @@ int create_alias(char *argv[], int argc)
   return 0;
 }
 
-// TODO: handle circular alias loop.
-void substitute_alias(char *argv[], int *argc)
+int substitute_alias(char *argv[], int *argc)
 {
   HashMap *seen_elements = hm_create();
 
@@ -215,15 +219,16 @@ void substitute_alias(char *argv[], int *argc)
 
     if (new_argc == 0)
     {
+      argv[0] = "";
       *argc = 0;
       argv[1] = NULL;
-      return;
+      return 0;
     }
 
     // Prevent infinite loop in case of circular alias.
     if (hm_get(seen_elements, argv[0]) != NULL)
     {
-      return;
+      return 0;
     }
 
     // Prevent infinite loop. (eg: alias ls = 'ls -l')
@@ -240,6 +245,7 @@ void substitute_alias(char *argv[], int *argc)
   }
   *argc += new_argc - 1;
   argv[*argc] = NULL;
+  return 0;
 }
 
 /***************************************************
@@ -266,6 +272,11 @@ void interactive_main(void)
       continue;
     }
 
+    if (argc == 0)
+    {
+      continue;
+    }
+
     parseline_no_subst(input, argv, &argc);
 
     if (argc == 0)
@@ -273,8 +284,10 @@ void interactive_main(void)
       continue;
     }
 
-    printf("%s\n", argv[0]);
-    substitute_alias(argv, &argc);
+    if (substitute_alias(argv, &argc) == 1)
+    {
+      continue;
+    }
 
     if (strcmp(argv[0], "exit") == 0)
     {
@@ -292,7 +305,6 @@ void interactive_main(void)
     }
     else
     {
-      printf("%s\n", argv[0]);
       int rc = fork();
       if (rc < 0)
       {
@@ -354,6 +366,11 @@ int batch_main(const char *script_file)
     }
 
     substitute_alias(argv, &argc);
+
+    if (argc == 0)
+    {
+      continue;
+    }
 
     if (strcmp(argv[0], "exit") == 0)
     {
