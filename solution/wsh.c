@@ -116,20 +116,23 @@ char *get_command_path(char *command) {
   return NULL;
 }
 
+void free_argv(char *argv[], int argc) {
+  for (int i = 0; i < argc; i++) {
+    free(argv[i]);
+  }
+}
+
 int exit_shell(char *argv[], int argc) {
   if (argc == 1) {
-    for (int i = 0; i < argc; i++) {
-      free(argv[i]);
-    }
+    free_argv(argv, argc);
     return 0;
   } else {
     wsh_warn(INVALID_EXIT_USE);
-    for (int i = 0; i < argc; i++) {
-      free(argv[i]);
-    }
+    free_argv(argv, argc);
     return 1;
   }
 }
+
 
 /***************************************************
  * Modes of Execution
@@ -166,12 +169,15 @@ void interactive_main(void) {
       }
     }
 
+    // Handle "alias"
+    if (strcmp(argv[0], "alias") == 0) {
+      // TODO: handle errors.
+    }
+
     int rc = fork();
     if (rc < 0) {
       perror("fork");
-      for (int i = 0; i < argc; i++) {
-        free(argv[i]);
-      }
+      free_argv(argv, argc);
       continue;
     } else if (rc == 0) {
       char *full_path = get_command_path(argv[0]);
@@ -180,17 +186,13 @@ void interactive_main(void) {
         free(full_path);
         wsh_warn(CMD_NOT_FOUND, argv[0]);
       }
-      for (int i = 0; i < argc; i++) {
-        free(argv[i]);
-      }
+      free_argv(argv, argc);
       clean_exit(EXIT_FAILURE);
     } else {
       wait(NULL);
     }
 
-    for (int i = 0; i < argc; i++) {
-      free(argv[i]);
-    }
+    free_argv(argv, argc);
     fflush(stderr);
     fflush(stdout);
   }
@@ -231,13 +233,16 @@ int batch_main(const char *script_file) {
       }
     }
 
+    // Handle "alias"
+    if (strcmp(argv[0], "alias") == 0) {
+      // TODO: handle errors.
+    }
+
     int rc = fork();
     if (rc < 0) {
       perror("fork");
       fclose(sfp);
-      for (int i = 0; i < argc; i++) {
-        free(argv[i]);
-      }
+      free_argv(argv, argc);
       continue;
     } else if (rc == 0) {
       char *full_path = get_command_path(argv[0]);
@@ -247,16 +252,12 @@ int batch_main(const char *script_file) {
         wsh_warn(CMD_NOT_FOUND, argv[0]);
       }
       fclose(sfp);
-      for (int i = 0; i < argc; i++) {
-        free(argv[i]);
-      }
+      free_argv(argv, argc);
       clean_exit(EXIT_FAILURE);
     } else {
       wait(NULL);
     }
-    for (int i = 0; i < argc; i++) {
-      free(argv[i]);
-    }
+    free_argv(argv, argc);
   }
 
   if (feof(sfp)) {
