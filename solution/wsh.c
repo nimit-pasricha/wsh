@@ -88,7 +88,6 @@ char *get_command_path(char *command) {
     char *res = strdup(command);
     if (res == NULL) {
       perror("strdup");
-      clean_exit(1);
     }
     return res;
   }
@@ -105,7 +104,7 @@ char *get_command_path(char *command) {
   while (token != NULL) {
     if (asprintf(&command_path, "%s/%s", token, command) < 0) {
       free(command_path);
-      clean_exit(EXIT_FAILURE);
+      return NULL;
     }
     if (access(command_path, X_OK) == 0) {
       return command_path;
@@ -133,7 +132,7 @@ void interactive_main(void) {
     char input[MAX_LINE + 1];
     if (fgets(input, sizeof(input), stdin) == NULL) {
       fprintf(stderr, "fgets error\n");
-      clean_exit(EXIT_FAILURE);
+      continue;
     }
 
     char *argv[MAX_ARGS + 1];
@@ -151,9 +150,9 @@ void interactive_main(void) {
 
     int rc = fork();
     if (rc < 0) {
-      fprintf(stderr, "fork error\n");
+      perror("fork");
       for (int i = 0; i < argc; i++) free(argv[i]);
-      clean_exit(EXIT_FAILURE);
+      continue;
     } else if (rc == 0) {
       char *full_path = get_command_path(argv[0]);
       if (full_path != NULL) {
@@ -189,7 +188,7 @@ int batch_main(const char *script_file) {
   }
 
   char command[MAX_LINE + 1];
-  while (fgets(command, sizeof(command), sfp)) {
+  while (fgets(command, sizeof(command), sfp) != NULL) {
     char *argv[MAX_ARGS + 1];
     int argc;
     parseline_no_subst(command, argv, &argc);
@@ -205,10 +204,10 @@ int batch_main(const char *script_file) {
 
     int rc = fork();
     if (rc < 0) {
-      fprintf(stderr, "fork error\n");
+      perror("fork");
       fclose(sfp);
       for (int i = 0; i < argc; i++) free(argv[i]);
-      clean_exit(EXIT_FAILURE);
+      continue;
     } else if (rc == 0) {
       char *full_path = get_command_path(argv[0]);
       if (full_path != NULL) {
@@ -224,7 +223,16 @@ int batch_main(const char *script_file) {
     }
     for (int i = 0; i < argc; i++) free(argv[i]);
   }
-  fclose(sfp);
+
+  if (feof(sfp)) {
+    fclose(sfp);
+    return EXIT_SUCCESS;
+  } else if (ferror(sfp)) {
+    fprintf(stderr, "fgets error\n");
+    fclose(sfp);
+    return EXIT_FAILURE;
+  }
+
   return EXIT_SUCCESS;
 }
 
