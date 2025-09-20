@@ -22,9 +22,11 @@ HashMap *alias_hm;
 /**
  * @Brief Free any allocated global resources
  */
-void wsh_free(void) {
+void wsh_free(void)
+{
   // Free any allocated resources here
-  if (alias_hm != NULL) {
+  if (alias_hm != NULL)
+  {
     hm_free(alias_hm);
     alias_hm = NULL;
   }
@@ -35,7 +37,8 @@ void wsh_free(void) {
  *
  * @param return_code The exit code to return
  */
-void clean_exit(int return_code) {
+void clean_exit(int return_code)
+{
   wsh_free();
   exit(return_code);
 }
@@ -46,7 +49,8 @@ void clean_exit(int return_code) {
  * @param msg The warning message format string
  * @param ... Additional arguments for the format string
  */
-void wsh_warn(const char *msg, ...) {
+void wsh_warn(const char *msg, ...)
+{
   va_list args;
   va_start(args, msg);
 
@@ -62,50 +66,60 @@ void wsh_warn(const char *msg, ...) {
  * @param argv Array of argument strings
  * @return
  */
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   alias_hm = hm_create();
   setenv("PATH", "/bin", 1);
-  if (argc > 2) {
+  if (argc > 2)
+  {
     wsh_warn(INVALID_WSH_USE);
     return EXIT_FAILURE;
   }
-  switch (argc) {
-    case 1:
-      interactive_main();
-      break;
-    case 2:
-      rc = batch_main(argv[1]);
-      break;
-    default:
-      break;
+  switch (argc)
+  {
+  case 1:
+    interactive_main();
+    break;
+  case 2:
+    rc = batch_main(argv[1]);
+    break;
+  default:
+    break;
   }
   wsh_free();
   return rc;
 }
 
-char *get_command_path(char *command) {
-  if (command[0] == '.' || command[0] == '/') {
+char *get_command_path(char *command)
+{
+  if (command[0] == '.' || command[0] == '/')
+  {
     char *res = strdup(command);
-    if (res == NULL) {
+    if (res == NULL)
+    {
       perror("strdup");
     }
     return res;
   }
 
   char *path = getenv("PATH");
-  if (path == NULL || *path == '\0') {
+  if (path == NULL || *path == '\0')
+  {
     wsh_warn(EMPTY_PATH);
     return NULL;
   }
 
   char *token = strtok(path, ":");
   char *command_path = NULL;
-  while (token != NULL) {
-    if (asprintf(&command_path, "%s/%s", token, command) < 0) {
+  while (token != NULL)
+  {
+    if (asprintf(&command_path, "%s/%s", token, command) < 0)
+    {
       free(command_path);
       return NULL;
     }
-    if (access(command_path, X_OK) == 0) {
+    if (access(command_path, X_OK) == 0)
+    {
       return command_path;
     }
     token = strtok(NULL, ":");
@@ -116,23 +130,28 @@ char *get_command_path(char *command) {
   return NULL;
 }
 
-void free_argv(char *argv[], int argc) {
-  for (int i = 0; i < argc; i++) {
+void free_argv(char *argv[], int argc)
+{
+  for (int i = 0; i < argc; i++)
+  {
     free(argv[i]);
   }
 }
 
-int exit_shell(char *argv[], int argc) {
-  if (argc == 1) {
+int exit_shell(char *argv[], int argc)
+{
+  if (argc == 1)
+  {
     free_argv(argv, argc);
     return 0;
-  } else {
+  }
+  else
+  {
     wsh_warn(INVALID_EXIT_USE);
     free_argv(argv, argc);
     return 1;
   }
 }
-
 
 /***************************************************
  * Modes of Execution
@@ -142,12 +161,15 @@ int exit_shell(char *argv[], int argc) {
  * @Brief Interactive mode: print prompt and wait for user input
  * execute the given input and repeat
  */
-void interactive_main(void) {
-  while (1) {
+void interactive_main(void)
+{
+  while (1)
+  {
     printf("%s", PROMPT);
 
     char input[MAX_LINE + 1];
-    if (fgets(input, sizeof(input), stdin) == NULL) {
+    if (fgets(input, sizeof(input), stdin) == NULL)
+    {
       fprintf(stderr, "fgets error\n");
       continue;
     }
@@ -156,39 +178,51 @@ void interactive_main(void) {
     int argc;
     parseline_no_subst(input, argv, &argc);
 
-    if (argc == 0) {
+    if (argc == 0)
+    {
       continue;
     }
 
     // Handle "exit"
-    if (strcmp(argv[0], "exit") == 0) {
-      if (exit_shell(argv, argc) == 0) {
+    if (strcmp(argv[0], "exit") == 0)
+    {
+      if (exit_shell(argv, argc) == 0)
+      {
         clean_exit(EXIT_SUCCESS);
-      } else {
+      }
+      else
+      {
         continue;
       }
     }
 
     // Handle "alias"
-    if (strcmp(argv[0], "alias") == 0) {
+    if (strcmp(argv[0], "alias") == 0)
+    {
       // TODO: handle errors.
     }
 
     int rc = fork();
-    if (rc < 0) {
+    if (rc < 0)
+    {
       perror("fork");
       free_argv(argv, argc);
       continue;
-    } else if (rc == 0) {
+    }
+    else if (rc == 0)
+    {
       char *full_path = get_command_path(argv[0]);
-      if (full_path != NULL) {
+      if (full_path != NULL)
+      {
         execv(full_path, argv);
         free(full_path);
         wsh_warn(CMD_NOT_FOUND, argv[0]);
       }
       free_argv(argv, argc);
       clean_exit(EXIT_FAILURE);
-    } else {
+    }
+    else
+    {
       wait(NULL);
     }
 
@@ -206,47 +240,60 @@ void interactive_main(void) {
  * @return EXIT_SUCCESS(0) on success, EXIT_FAILURE(1) on error
  */
 
-int batch_main(const char *script_file) {
+int batch_main(const char *script_file)
+{
   FILE *sfp = fopen(script_file, "r");
-  if (sfp == NULL) {
+  if (sfp == NULL)
+  {
     perror("fopen");
     clean_exit(EXIT_FAILURE);
   }
 
   char command[MAX_LINE + 1];
-  while (fgets(command, sizeof(command), sfp) != NULL) {
+  while (fgets(command, sizeof(command), sfp) != NULL)
+  {
     char *argv[MAX_ARGS + 1];
     int argc;
     parseline_no_subst(command, argv, &argc);
 
-    if (argc == 0) {
+    if (argc == 0)
+    {
       continue;
     }
 
     // Handle "exit"
-    if (strcmp(argv[0], "exit") == 0) {
-      if (exit_shell(argv, argc) == 0) {
+    if (strcmp(argv[0], "exit") == 0)
+    {
+      if (exit_shell(argv, argc) == 0)
+      {
         fclose(sfp);
         clean_exit(EXIT_SUCCESS);
-      } else {
+      }
+      else
+      {
         continue;
       }
     }
 
     // Handle "alias"
-    if (strcmp(argv[0], "alias") == 0) {
+    if (strcmp(argv[0], "alias") == 0)
+    {
       // TODO: handle errors.
     }
 
     int rc = fork();
-    if (rc < 0) {
+    if (rc < 0)
+    {
       perror("fork");
       fclose(sfp);
       free_argv(argv, argc);
       continue;
-    } else if (rc == 0) {
+    }
+    else if (rc == 0)
+    {
       char *full_path = get_command_path(argv[0]);
-      if (full_path != NULL) {
+      if (full_path != NULL)
+      {
         execv(full_path, argv);
         free(full_path);
         wsh_warn(CMD_NOT_FOUND, argv[0]);
@@ -254,16 +301,21 @@ int batch_main(const char *script_file) {
       fclose(sfp);
       free_argv(argv, argc);
       clean_exit(EXIT_FAILURE);
-    } else {
+    }
+    else
+    {
       wait(NULL);
     }
     free_argv(argv, argc);
   }
 
-  if (feof(sfp)) {
+  if (feof(sfp))
+  {
     fclose(sfp);
     return EXIT_SUCCESS;
-  } else if (ferror(sfp)) {
+  }
+  else if (ferror(sfp))
+  {
     fprintf(stderr, "fgets error\n");
     fclose(sfp);
     return EXIT_FAILURE;
@@ -285,14 +337,17 @@ int batch_main(const char *script_file) {
  * @param argv Array to store the parsed arguments (must be preallocated)
  * @param argc Pointer to store the number of parsed arguments
  */
-void parseline_no_subst(const char *cmdline, char **argv, int *argc) {
-  if (!cmdline) {
+void parseline_no_subst(const char *cmdline, char **argv, int *argc)
+{
+  if (!cmdline)
+  {
     *argc = 0;
     argv[0] = NULL;
     return;
   }
   char *buf = strdup(cmdline);
-  if (!buf) {
+  if (!buf)
+  {
     perror("strdup");
     clean_exit(EXIT_FAILURE);
   }
@@ -300,9 +355,11 @@ void parseline_no_subst(const char *cmdline, char **argv, int *argc) {
   const size_t len = strlen(buf);
   if (len > 0 && buf[len - 1] == '\n')
     buf[len - 1] = ' ';
-  else {
+  else
+  {
     char *new_buf = realloc(buf, len + 2);
-    if (!new_buf) {
+    if (!new_buf)
+    {
       perror("realloc");
       free(buf);
       clean_exit(EXIT_FAILURE);
@@ -313,41 +370,52 @@ void parseline_no_subst(const char *cmdline, char **argv, int *argc) {
 
   int count = 0;
   char *p = buf;
-  while (*p && *p == ' ') p++; /* skip leading spaces */
+  while (*p && *p == ' ')
+    p++; /* skip leading spaces */
 
-  while (*p) {
+  while (*p)
+  {
     char *token_start = p;
     char *token = NULL;
-    if (*p == '\'') {
+    if (*p == '\'')
+    {
       token_start = ++p;
       token = strchr(p, '\'');
-      if (!token) {
+      if (!token)
+      {
         /* Handle missing closing quote - Print `Missing closing quote` to
          * stderr */
         wsh_warn(MISSING_CLOSING_QUOTE);
         free(buf);
-        for (int i = 0; i < count; i++) free(argv[i]);
+        for (int i = 0; i < count; i++)
+          free(argv[i]);
         *argc = 0;
         argv[0] = NULL;
         return;
       }
       *token = '\0';
       p = token + 1;
-    } else {
+    }
+    else
+    {
       token = strchr(p, ' ');
-      if (!token) break;
+      if (!token)
+        break;
       *token = '\0';
       p = token + 1;
     }
     argv[count] = strdup(token_start);
-    if (!argv[count]) {
+    if (!argv[count])
+    {
       perror("strdup");
-      for (int i = 0; i < count; i++) free(argv[i]);
+      for (int i = 0; i < count; i++)
+        free(argv[i]);
       free(buf);
       clean_exit(EXIT_FAILURE);
     }
     count++;
-    while (*p && (*p == ' ')) p++;
+    while (*p && (*p == ' '))
+      p++;
   }
   argv[count] = NULL;
   *argc = count;
