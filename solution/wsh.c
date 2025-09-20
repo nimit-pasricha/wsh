@@ -149,6 +149,7 @@ int exit_shell(int argc)
   return 0;
 }
 
+// TODO: make const.
 int create_alias(char *argv[], int argc)
 {
   if (argc != 4 || strcmp(argv[2], "=") != 0 || *argv[1] == '\0')
@@ -171,6 +172,30 @@ int create_alias(char *argv[], int argc)
   return 0;
 }
 
+// TODO: handle circular alias loop.
+void substitute_alias(char *argv[], int *argc)
+{
+  char *new_argv[MAX_ARGS];
+  int new_argc = 1;
+  char *command = hm_get(alias_hm, argv[0]);
+  int keep_going = 1;
+  while (command != NULL && keep_going)
+  {
+    parseline_no_subst(command, new_argv, &new_argc);
+
+    if (strcmp(new_argv[0], argv[0]) == 0)
+    {
+      keep_going = 0;
+    }
+
+    memmove(argv + new_argc - 1, argv, *argc * sizeof(char *));
+    memmove(argv, new_argv, new_argc * sizeof(char *));
+    command = hm_get(alias_hm, argv[0]);
+  }
+  *argc += new_argc - 1;
+  argv[*argc] = NULL;
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -182,7 +207,7 @@ int create_alias(char *argv[], int argc)
 void interactive_main(void)
 {
   int keep_going = 1;
-  char *argv[MAX_ARGS + 1];
+  char *argv[MAX_ARGS];
   int argc;
   while (keep_going)
   {
@@ -199,9 +224,12 @@ void interactive_main(void)
 
     if (argc == 0)
     {
-      // Do nothing.
+      continue;
     }
-    else if (strcmp(argv[0], "exit") == 0)
+
+    substitute_alias(argv, &argc);
+
+    if (strcmp(argv[0], "exit") == 0)
     {
       if ((rc = exit_shell(argc)) == 0)
       {
@@ -262,7 +290,7 @@ int batch_main(const char *script_file)
 
   char command[MAX_LINE + 1];
   int keep_going = 1;
-  char *argv[MAX_ARGS + 1];
+  char *argv[MAX_ARGS];
   int argc;
   while (fgets(command, sizeof(command), sfp) != NULL && keep_going)
   {
@@ -271,9 +299,12 @@ int batch_main(const char *script_file)
 
     if (argc == 0)
     {
-      // Do nothing.
+      continue;
     }
-    else if (strcmp(argv[0], "exit") == 0)
+
+    substitute_alias(argv, &argc);
+
+    if (strcmp(argv[0], "exit") == 0)
     {
       if (exit_shell(argc) == 0)
       {
