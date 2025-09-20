@@ -157,6 +157,12 @@ int create_alias(char *argv[], int argc)
     return 1;
   }
 
+  if (argc == 1)
+  {
+    hm_print_sorted(alias_hm);
+    return 0;
+  }
+
   int found_equals_at_correct_spot = 0;
   for (int i = 0; i < argc; i++)
   {
