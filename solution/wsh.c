@@ -224,6 +224,7 @@ int batch_main(const char *script_file) {
     // Handle "exit"
     if (strcmp(argv[0], "exit") == 0) {
       if (exit_shell(argv, argc) == 0) {
+        fclose(sfp);
         clean_exit(EXIT_SUCCESS);
       } else {
         continue;
