@@ -189,7 +189,7 @@ void interactive_main(void)
     }
     else if (strcmp(argv[0], "exit") == 0)
     {
-      if (exit_shell(argc) == 0)
+      if ((rc = exit_shell(argc)) == 0)
       {
         keep_going = 0;
       }
