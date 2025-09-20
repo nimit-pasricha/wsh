@@ -108,7 +108,7 @@ char *get_command_path(char *command)
     wsh_warn(EMPTY_PATH);
     return NULL;
   }
-  
+
   char *token = strtok(path, ":");
   char *command_path = NULL;
   while (token != NULL)
@@ -160,13 +160,26 @@ void interactive_main(void)
       continue;
     }
 
+    // Handle "exit"
     if (strcmp(argv[0], "exit") == 0)
     {
-      for (int i = 0; i < argc; i++)
+      if (argc == 1)
       {
-        free(argv[i]);
+        for (int i = 0; i < argc; i++)
+        {
+          free(argv[i]);
+        }
+        clean_exit(EXIT_SUCCESS);
       }
-      break;
+      else
+      {
+        wsh_warn(INVALID_EXIT_USE);
+        for (int i = 0; i < argc; i++)
+        {
+          free(argv[i]);
+        }
+        continue;
+      }
     }
 
     int rc = fork();
@@ -237,11 +250,26 @@ int batch_main(const char *script_file)
       continue;
     }
 
+    // Handle "exit"
     if (strcmp(argv[0], "exit") == 0)
     {
-      for (int i = 0; i < argc; i++)
-        free(argv[i]);
-      break;
+      if (argc == 1)
+      {
+        for (int i = 0; i < argc; i++)
+        {
+          free(argv[i]);
+        }
+        clean_exit(EXIT_SUCCESS);
+      }
+      else
+      {
+        wsh_warn(INVALID_EXIT_USE);
+        for (int i = 0; i < argc; i++)
+        {
+          free(argv[i]);
+        }
+        continue;
+      }
     }
 
     int rc = fork();
