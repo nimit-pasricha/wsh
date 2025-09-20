@@ -143,6 +143,7 @@ int exit_shell(int argc)
 {
   if (argc > 1)
   {
+    wsh_warn(INVALID_EXIT_USE);
     return 1;
   }
   return 0;
@@ -152,6 +153,7 @@ int create_alias(char *argv[], int argc)
 {
   if (argc != 4 || strcmp(argv[2], "=") != 0 || *argv[1] == '\0')
   {
+    wsh_warn(INVALID_ALIAS_USE);
     return 1;
   }
 
@@ -160,6 +162,7 @@ int create_alias(char *argv[], int argc)
   {
     if (isspace(name[i]))
     {
+      wsh_warn(INVALID_ALIAS_USE);
       return 1;
     }
   }
@@ -204,17 +207,10 @@ void interactive_main(void)
       {
         keep_going = 0;
       }
-      else
-      {
-        wsh_warn(INVALID_EXIT_USE);
-      }
     }
     else if (strcmp(argv[0], "alias") == 0)
     {
-      if (create_alias(argv, argc) != 0)
-      {
-        wsh_warn(INVALID_ALIAS_USE);
-      }
+      create_alias(argv, argc);
     }
     else
     {
