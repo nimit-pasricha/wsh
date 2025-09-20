@@ -95,12 +95,11 @@ char *get_command_path(char *command)
 {
   if (command[0] == '.' || command[0] == '/')
   {
-    char *res = strdup(command);
-    if (res == NULL)
+    if (access(command, X_OK) == 0)
     {
-      perror("strdup");
+      return strdup(command);
     }
-    return res;
+    return NULL;
   }
 
   char *path = getenv("PATH");
@@ -281,7 +280,14 @@ int which_command(char *argv[], int argc)
     }
   }
 
-  return 0;
+  if (name[0] == '.' || name[0] == '/')
+  {
+    if (access(name, X_OK) == 0)
+    {
+      printf(WHICH_EXTERNAL, name, name);
+      return 0;
+    }
+  }
 }
 
 /***************************************************
