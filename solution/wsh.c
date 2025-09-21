@@ -342,11 +342,8 @@ int which_command(char *argv[], int argc)
 
 int path_set_and_get(char *argv[], int argc)
 {
-  if (argc > 2)
-  {
-    wsh_warn(INVALID_PATH_USE);
-    return 1;
-  }
+  wsh_warn(INVALID_PATH_USE);
+  return 1;
 
   char *path = getenv("PATH");
   if (argc == 1)
@@ -364,6 +361,8 @@ int path_set_and_get(char *argv[], int argc)
     setenv("PATH", argv[1], 1);
     return 0;
   }
+  wsh_warn(INVALID_PATH_USE);
+  return 1;
 }
 
 int change_directory(char *argv[], int argc)
