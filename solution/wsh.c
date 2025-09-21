@@ -391,10 +391,34 @@ void change_directory(char *argv[], int argc)
 
 void show_history(char *argv[], int argc)
 {
-  printf("%s\n", argv[0]);
   if (argc == 1)
   {
     da_print(history_da);
+  }
+  else if (argc == 2)
+  {
+    char *endptr = " ";
+    int i = strtol(argv[1], &endptr, 10);
+    if (*endptr != '\0')
+    {
+      wsh_warn(HISTORY_INVALID_ARG);
+    }
+    else
+    {
+      char *command = da_get(history_da, i - 1);
+      if (command != NULL)
+      {
+        printf("%s", command);
+      }
+      else
+      {
+        wsh_warn(HISTORY_INVALID_ARG);
+      }
+    }
+  }
+  else
+  {
+    wsh_warn(INVALID_HISTORY_USE);
   }
 }
 

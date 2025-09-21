@@ -53,7 +53,6 @@ char *da_get(DynamicArray *da, const size_t ind)
 {
   if (ind >= da->size)
   {
-    da_free(da);
     return NULL;
   }
 
@@ -63,19 +62,12 @@ char *da_get(DynamicArray *da, const size_t ind)
 // Delete Element at an index (handles packing)
 void da_delete(DynamicArray *da, const size_t ind)
 {
-  if (ind >= da->size)
-  {
-    da_free(da);
-    return;
-  }
-
   if (ind < da->size - 1)
   {
     memmove(&da->data[ind], &da->data[ind + 1],
             (da->size - ind - 1) * sizeof(char *));
+    da->size--;
   }
-
-  da->size--;
 }
 
 // Print Elements line after line
