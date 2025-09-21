@@ -354,10 +354,19 @@ void path_set_and_get(char *argv[], int argc)
 
 void change_directory(char *argv[], int argc)
 {
-  printf("%d\n", argc);
-  if (chdir(argv[1]) == -1)
+  if (argc == 2)
   {
-    perror("chdir");
+    if (chdir(argv[1]) == -1)
+    {
+      perror("chdir");
+    }
+  }
+  else if (argc == 1)
+  {
+    if (chdir(getenv("HOME")) == -1)
+    {
+      perror("chdir");
+    }
   }
 }
 
