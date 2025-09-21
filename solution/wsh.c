@@ -340,72 +340,78 @@ int which_command(char *argv[], int argc)
   return 1;
 }
 
-void path_set_and_get(char *argv[], int argc)
+int path_set_and_get(char *argv[], int argc)
 {
   if (argc > 2)
   {
     wsh_warn(INVALID_PATH_USE);
-    return;
+    return 1;
   }
 
   char *path = getenv("PATH");
   if (argc == 1)
   {
-    if (path == NULL)
+    if (path == NULL || *path == '\0')
     {
-      path = "";
+      wsh_warn(EMPTY_PATH);
+      return 1;
     }
     printf("%s\n", path);
+    return 0;
   }
   else if (argc == 2)
   {
     setenv("PATH", argv[1], 1);
+    return 0;
   }
 }
 
-void change_directory(char *argv[], int argc)
+int change_directory(char *argv[], int argc)
 {
   if (argc == 2)
   {
     if (chdir(argv[1]) == -1)
     {
-      perror("chdir");
+      wsh_warn(INVALID_CD_USE);
+      return 1;
     }
+    return 0;
   }
-  else if (argc == 1)
+
+  if (argc == 1)
   {
     char *home = getenv("HOME");
     if (home == NULL)
     {
       wsh_warn(CD_NO_HOME);
+      return 1;
     }
-    else
+    if (chdir(home) == -1)
     {
-      if (chdir(home) == -1)
-      {
-        perror("cd"); // TODO: check why this show 'chdir' not 'cd'
-      }
+      wsh_warn(INVALID_CD_USE);
+      return 1;
     }
+    return 0;
   }
-  else
-  {
-    wsh_warn(INVALID_CD_USE);
-  }
+  wsh_warn(INVALID_CD_USE);
+  return 1;
 }
 
-void show_history(char *argv[], int argc)
+int show_history(char *argv[], int argc)
 {
   if (argc == 1)
   {
     da_print(history_da);
+    return 0;
   }
-  else if (argc == 2)
+  if (argc == 2)
   {
     char *endptr = " ";
     int i = strtol(argv[1], &endptr, 10);
     if (*endptr != '\0')
     {
       wsh_warn(HISTORY_INVALID_ARG);
+      return 1;
     }
     else
     {
@@ -413,17 +419,14 @@ void show_history(char *argv[], int argc)
       if (command != NULL)
       {
         printf("%s", command);
+        return 0;
       }
-      else
-      {
-        wsh_warn(HISTORY_INVALID_ARG);
-      }
+      wsh_warn(HISTORY_INVALID_ARG);
+      return 1;
     }
   }
-  else
-  {
-    wsh_warn(INVALID_HISTORY_USE);
-  }
+  wsh_warn(INVALID_HISTORY_USE);
+  return 1;
 }
 
 /**
