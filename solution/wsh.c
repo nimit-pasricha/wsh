@@ -329,6 +329,29 @@ int which_command(char *argv[], int argc)
   return 1;
 }
 
+void path_set_and_get(char *argv[], int argc)
+{
+  if (argc > 2)
+  {
+    wsh_warn(INVALID_PATH_USE);
+    return;
+  }
+
+  char *path = getenv("PATH");
+  if (argc == 1)
+  {
+    if (path == NULL)
+    {
+      path = "";
+    }
+    printf("%s\n", path);
+  }
+  else if (argc == 2)
+  {
+    setenv("PATH", argv[1], 1);
+  }
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -391,6 +414,10 @@ void interactive_main(void)
     else if (strcmp(argv[0], "which") == 0)
     {
       which_command(argv, argc);
+    }
+    else if (strcmp(argv[0], "path") == 0)
+    {
+      path_set_and_get(argv, argc);
     }
     else
     {
@@ -489,6 +516,10 @@ int batch_main(const char *script_file)
     else if (strcmp(argv[0], "which") == 0)
     {
       which_command(argv, argc);
+    }
+    else if (strcmp(argv[0], "path") == 0)
+    {
+      path_set_and_get(argv, argc);
     }
     else
     {
