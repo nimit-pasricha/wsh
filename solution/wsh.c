@@ -587,7 +587,7 @@ int batch_main(const char *script_file)
     }
     else if (strcmp(argv[0], "unalias") == 0)
     {
-      if (unalias(argv, argc) == 1)
+      if (unalias(argv, argc) != 0)
       {
         wsh_warn(INVALID_UNALIAS_USE);
       }
@@ -633,6 +633,7 @@ int batch_main(const char *script_file)
         wait(NULL);
       }
     }
+    
     da_put(history_da, command);
     free_argv(argv, argc);
   }
