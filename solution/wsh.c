@@ -225,15 +225,18 @@ int substitute_alias(char *argv[], int *argc)
 
     if (new_argc == 0)
     {
+      free_argv(argv, *argc);
       argv[0] = "";
       *argc = 0;
       argv[1] = NULL;
+      hm_free(seen_elements);
       return 0;
     }
 
     // Prevent infinite loop in case of circular alias.
     if (hm_get(seen_elements, argv[0]) != NULL)
     {
+      hm_free(seen_elements);
       return 0;
     }
 
@@ -246,12 +249,13 @@ int substitute_alias(char *argv[], int *argc)
     hm_put(seen_elements, argv[0], "");
 
     memmove(argv + new_argc - 1, argv, *argc * sizeof(char *));
+    free(argv[new_argc - 1]);
     memmove(argv, new_argv, new_argc * sizeof(char *));
     command = hm_get(alias_hm, argv[0]);
   }
   *argc += new_argc - 1;
   argv[*argc] = NULL;
-  free(seen_elements);
+  hm_free(seen_elements);
   return 0;
 }
 

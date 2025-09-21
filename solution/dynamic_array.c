@@ -11,8 +11,7 @@ DynamicArray *da_create(size_t init_capacity)
 
   if (da == NULL)
   {
-    fprintf(stderr, "malloc() failed trying to allocate da.\n");
-    da_free(da);
+    perror("malloc");
     exit(1);
   }
 
