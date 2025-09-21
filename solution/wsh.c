@@ -634,7 +634,7 @@ int batch_main(const char *script_file)
       }
     }
     
-    da_put(history_da, command);
+    da_put(history_da, strdup(command));
     free_argv(argv, argc);
   }
 
