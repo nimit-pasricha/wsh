@@ -363,10 +363,22 @@ void change_directory(char *argv[], int argc)
   }
   else if (argc == 1)
   {
-    if (chdir(getenv("HOME")) == -1)
+    char *home = getenv("HOME");
+    if (home == NULL)
     {
-      perror("chdir");
+      wsh_warn(CD_NO_HOME);
     }
+    else
+    {
+      if (chdir(home) == -1)
+      {
+        perror("cd"); // TODO: check why this show 'chdir' not 'cd'
+      }
+    }
+  }
+  else
+  {
+    wsh_warn(INVALID_CD_USE);
   }
 }
 
