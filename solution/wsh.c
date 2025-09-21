@@ -461,10 +461,9 @@ void interactive_main(void)
 
     if (argc == 0)
     {
-      continue;
+      // Do nothing.
     }
-
-    if (strcmp(argv[0], "exit") == 0)
+    else if (strcmp(argv[0], "exit") == 0)
     {
       if ((rc = exit_shell(argc)) == 0)
       {
@@ -526,7 +525,7 @@ void interactive_main(void)
       }
     }
 
-    da_put(history_da, strdup(input));
+    da_put(history_da, input);
     free_argv(argv, argc);
     fflush(stderr);
     fflush(stdout);
@@ -568,10 +567,9 @@ int batch_main(const char *script_file)
 
     if (argc == 0)
     {
-      continue;
+      // do nothing.
     }
-
-    if (strcmp(argv[0], "exit") == 0)
+    else if (strcmp(argv[0], "exit") == 0)
     {
       if ((rc = exit_shell(argc)) == 0)
       {
@@ -633,8 +631,8 @@ int batch_main(const char *script_file)
         wait(NULL);
       }
     }
-    
-    da_put(history_da, strdup(command));
+
+    da_put(history_da, command);
     free_argv(argv, argc);
   }
 

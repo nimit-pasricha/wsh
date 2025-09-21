@@ -34,7 +34,7 @@ void da_put(DynamicArray *da, char *val)
 {
   if (da->size == da->capacity)
   {
-    da->capacity *= 2;
+    da->capacity = (da->capacity == 0) ? 1 : da->capacity * 2;
     da->data = realloc(da->data, da->capacity * sizeof(char *));
     if (da->data == NULL)
     {
@@ -44,7 +44,7 @@ void da_put(DynamicArray *da, char *val)
     }
   }
 
-  da->data[da->size++] = val;
+  da->data[da->size++] = strdup(val);
 }
 
 // Get element at an index (NULL if not found)
