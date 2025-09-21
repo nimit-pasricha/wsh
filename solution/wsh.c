@@ -426,6 +426,65 @@ void show_history(char *argv[], int argc)
   }
 }
 
+/**
+ * Checks if the command entered uses a builtin.
+ * Returns: 0 if builtin used was 'exit'
+ *          1 if builtin used was anything but 'exit'
+ *         -1 if no builtin was found.
+ */
+int check_builtins(char *argv[], int argc)
+{
+  if (argc == 0)
+  {
+    return 1;
+  }
+  else if (strcmp(argv[0], "exit") == 0)
+  {
+    if ((rc = exit_shell(argc)) == 0)
+    {
+      return 0;
+    }
+  }
+  else if (strcmp(argv[0], "alias") == 0)
+  {
+    if (create_alias(argv, argc) != 0)
+    {
+      wsh_warn(INVALID_ALIAS_USE);
+    }
+    return 1;
+  }
+  else if (strcmp(argv[0], "unalias") == 0)
+  {
+    if (unalias(argv, argc) != 0)
+    {
+      wsh_warn(INVALID_UNALIAS_USE);
+    }
+    return 1;
+  }
+  else if (strcmp(argv[0], "which") == 0)
+  {
+    which_command(argv, argc);
+    return 1;
+  }
+  else if (strcmp(argv[0], "path") == 0)
+  {
+    path_set_and_get(argv, argc);
+    return 1;
+  }
+  else if (strcmp(argv[0], "cd") == 0)
+  {
+    change_directory(argv, argc);
+    return 1;
+  }
+  else if (strcmp(argv[0], "history") == 0)
+  {
+    show_history(argv, argc);
+    return 1;
+  }
+
+  return -1;
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -459,48 +518,8 @@ void interactive_main(void)
 
     substitute_alias(argv, &argc);
 
-    if (argc == 0)
-    {
-      // Do nothing.
-    }
-    else if (strcmp(argv[0], "exit") == 0)
-    {
-      if ((rc = exit_shell(argc)) == 0)
-      {
-        keep_going = 0;
-      }
-    }
-    else if (strcmp(argv[0], "alias") == 0)
-    {
-      if (create_alias(argv, argc) != 0)
-      {
-        wsh_warn(INVALID_ALIAS_USE);
-      }
-    }
-    else if (strcmp(argv[0], "unalias") == 0)
-    {
-      if (unalias(argv, argc) != 0)
-      {
-        wsh_warn(INVALID_UNALIAS_USE);
-      }
-    }
-    else if (strcmp(argv[0], "which") == 0)
-    {
-      which_command(argv, argc);
-    }
-    else if (strcmp(argv[0], "path") == 0)
-    {
-      path_set_and_get(argv, argc);
-    }
-    else if (strcmp(argv[0], "cd") == 0)
-    {
-      change_directory(argv, argc);
-    }
-    else if (strcmp(argv[0], "history") == 0)
-    {
-      show_history(argv, argc);
-    }
-    else
+    keep_going = check_builtins(argv, argc);
+    if (keep_going == -1)
     {
       int rc = fork();
       if (rc < 0)
@@ -565,48 +584,8 @@ int batch_main(const char *script_file)
 
     substitute_alias(argv, &argc);
 
-    if (argc == 0)
-    {
-      // do nothing.
-    }
-    else if (strcmp(argv[0], "exit") == 0)
-    {
-      if ((rc = exit_shell(argc)) == 0)
-      {
-        keep_going = 0;
-      }
-    }
-    else if (strcmp(argv[0], "alias") == 0)
-    {
-      if (create_alias(argv, argc) != 0)
-      {
-        wsh_warn(INVALID_ALIAS_USE);
-      }
-    }
-    else if (strcmp(argv[0], "unalias") == 0)
-    {
-      if (unalias(argv, argc) != 0)
-      {
-        wsh_warn(INVALID_UNALIAS_USE);
-      }
-    }
-    else if (strcmp(argv[0], "which") == 0)
-    {
-      which_command(argv, argc);
-    }
-    else if (strcmp(argv[0], "path") == 0)
-    {
-      path_set_and_get(argv, argc);
-    }
-    else if (strcmp(argv[0], "cd") == 0)
-    {
-      change_directory(argv, argc);
-    }
-    else if (strcmp(argv[0], "history") == 0)
-    {
-      show_history(argv, argc);
-    }
-    else
+    keep_going = check_builtins(argv, argc);
+    if (keep_going == -1)
     {
       int rc = fork();
       if (rc < 0)
