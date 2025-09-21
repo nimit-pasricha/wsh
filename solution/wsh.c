@@ -261,7 +261,12 @@ int unalias(char *argv[], int argc)
 
 int which_command(char *argv[], int argc)
 {
-  printf("%d\n", argc);
+  if (argc != 2)
+  {
+    wsh_warn(INVALID_WHICH_USE);
+    return 1;
+  }
+
   char *name = argv[1];
   char *res;
   if ((res = hm_get(alias_hm, name)) != NULL)
@@ -273,7 +278,7 @@ int which_command(char *argv[], int argc)
   char *builtins[7] = {"exit", "alias", "unalias", "which", "path", "cd", "history"};
   for (int i = 0; i < 7; i++)
   {
-    if (strcmp(builtins[i], argv[1]))
+    if (strcmp(builtins[i], argv[1]) == 0)
     {
       printf(WHICH_BUILTIN, builtins[i]);
       return 0;
@@ -284,10 +289,44 @@ int which_command(char *argv[], int argc)
   {
     if (access(name, X_OK) == 0)
     {
-      printf(WHICH_EXTERNAL, name, name);
+      printf("%s\n", name);
       return 0;
     }
+    else
+    {
+      wsh_warn(WHICH_NOT_FOUND, name);
+      return 1;
+    }
   }
+
+  char *path = getenv("PATH");
+  if (path == NULL || *path == '\0')
+  {
+    wsh_warn(EMPTY_PATH);
+    return -1;
+  }
+
+  char *token = strtok(path, ":");
+  char *command_path = NULL;
+  while (token != NULL)
+  {
+    if (asprintf(&command_path, "%s/%s", token, name) < 0)
+    {
+      free(command_path);
+      return 1;
+    }
+    if (access(command_path, X_OK) == 0)
+    {
+      printf(WHICH_EXTERNAL, name, command_path);
+      free(command_path);
+      return 0;
+    }
+    token = strtok(NULL, ":");
+  }
+
+  free(command_path);
+  wsh_warn(WHICH_NOT_FOUND, name);
+  return 1;
 }
 
 /***************************************************
