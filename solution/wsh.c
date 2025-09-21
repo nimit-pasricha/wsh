@@ -352,6 +352,15 @@ void path_set_and_get(char *argv[], int argc)
   }
 }
 
+void change_directory(char *argv[], int argc)
+{
+  printf("%d\n", argc);
+  if (chdir(argv[1]) == -1)
+  {
+    perror("chdir");
+  }
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -418,6 +427,10 @@ void interactive_main(void)
     else if (strcmp(argv[0], "path") == 0)
     {
       path_set_and_get(argv, argc);
+    }
+    else if (strcmp(argv[0], "cd") == 0)
+    {
+      change_directory(argv, argc);
     }
     else
     {
@@ -520,6 +533,10 @@ int batch_main(const char *script_file)
     else if (strcmp(argv[0], "path") == 0)
     {
       path_set_and_get(argv, argc);
+    }
+    else if (strcmp(argv[0], "cd") == 0)
+    {
+      change_directory(argv, argc);
     }
     else
     {
