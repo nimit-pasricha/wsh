@@ -486,6 +486,10 @@ int batch_main(const char *script_file)
         wsh_warn(INVALID_UNALIAS_USE);
       }
     }
+    else if (strcmp(argv[0], "which") == 0)
+    {
+      which_command(argv, argc);
+    }
     else
     {
       int rc = fork();
