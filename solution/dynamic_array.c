@@ -83,13 +83,17 @@ void da_print(DynamicArray *da)
 {
   for (size_t i = 0; i < da->size; i++)
   {
-    printf("%s\n", da->data[i]);
+    printf("%s", da->data[i]);
   }
 }
 
 // Free whole DynamicArray
 void da_free(DynamicArray *da)
 {
+  for (size_t i = 0; i < da->size; i++)
+  {
+    free(da->data[i]);
+  }
   free(da->data);
   free(da);
 }

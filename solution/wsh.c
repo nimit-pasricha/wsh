@@ -16,6 +16,7 @@
 
 int rc;
 HashMap *alias_hm;
+DynamicArray *history_da;
 
 /***************************************************
  * Helper Functions
@@ -30,6 +31,11 @@ void wsh_free(void)
   {
     hm_free(alias_hm);
     alias_hm = NULL;
+  }
+  if (history_da != NULL)
+  {
+    da_free(history_da);
+    history_da = NULL;
   }
 }
 
@@ -70,6 +76,7 @@ void wsh_warn(const char *msg, ...)
 int main(int argc, char **argv)
 {
   alias_hm = hm_create();
+  history_da = da_create(10);
   setenv("PATH", "/bin", 1);
   if (argc > 2)
   {
@@ -382,6 +389,15 @@ void change_directory(char *argv[], int argc)
   }
 }
 
+void show_history(char *argv[], int argc)
+{
+  printf("%s\n", argv[0]);
+  if (argc == 1)
+  {
+    da_print(history_da);
+  }
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -453,6 +469,10 @@ void interactive_main(void)
     {
       change_directory(argv, argc);
     }
+    else if (strcmp(argv[0], "history") == 0)
+    {
+      show_history(argv, argc);
+    }
     else
     {
       int rc = fork();
@@ -478,6 +498,7 @@ void interactive_main(void)
       }
     }
 
+    da_put(history_da, strdup(input));
     free_argv(argv, argc);
     fflush(stderr);
     fflush(stdout);
@@ -559,6 +580,10 @@ int batch_main(const char *script_file)
     {
       change_directory(argv, argc);
     }
+    else if (strcmp(argv[0], "history") == 0)
+    {
+      show_history(argv, argc);
+    }
     else
     {
       int rc = fork();
@@ -584,6 +609,7 @@ int batch_main(const char *script_file)
         wait(NULL);
       }
     }
+    da_put(history_da, command);
     free_argv(argv, argc);
   }
 
