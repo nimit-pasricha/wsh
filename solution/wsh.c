@@ -473,14 +473,14 @@ void interactive_main(void)
     }
     else if (strcmp(argv[0], "alias") == 0)
     {
-      if (create_alias(argv, argc) == 1)
+      if (create_alias(argv, argc) != 0)
       {
         wsh_warn(INVALID_ALIAS_USE);
       }
     }
     else if (strcmp(argv[0], "unalias") == 0)
     {
-      if (unalias(argv, argc) == 1)
+      if (unalias(argv, argc) != 0)
       {
         wsh_warn(INVALID_UNALIAS_USE);
       }
@@ -573,13 +573,9 @@ int batch_main(const char *script_file)
 
     if (strcmp(argv[0], "exit") == 0)
     {
-      if (exit_shell(argc) == 0)
+      if ((rc = exit_shell(argc)) == 0)
       {
         keep_going = 0;
-      }
-      else
-      {
-        wsh_warn(INVALID_EXIT_USE);
       }
     }
     else if (strcmp(argv[0], "alias") == 0)
