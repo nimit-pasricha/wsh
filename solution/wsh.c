@@ -106,6 +106,7 @@ char *get_command_path(char *command)
     {
       return strdup(command);
     }
+    wsh_warn(CMD_NOT_FOUND, command);
     return NULL;
   }
 
@@ -155,7 +156,6 @@ int exit_shell(int argc)
   return 0;
 }
 
-// TODO: make const.
 int create_alias(char *argv[], int argc)
 {
   if (argc > 4)
@@ -342,13 +342,10 @@ int which_command(char *argv[], int argc)
 
 int path_set_and_get(char *argv[], int argc)
 {
-  wsh_warn(INVALID_PATH_USE);
-  return 1;
-
   char *path = getenv("PATH");
   if (argc == 1)
   {
-    if (path == NULL || *path == '\0')
+    if (path == NULL)
     {
       wsh_warn(EMPTY_PATH);
       return 1;
@@ -428,65 +425,6 @@ int show_history(char *argv[], int argc)
   return 1;
 }
 
-/**
- * Checks if the command entered uses a builtin.
- * Returns: 0 if builtin used was 'exit'
- *          1 if builtin used was anything but 'exit'
- *         -1 if no builtin was found.
- */
-int check_builtins(char *argv[], int argc)
-{
-  if (argc == 0)
-  {
-    return 1;
-  }
-  else if (strcmp(argv[0], "exit") == 0)
-  {
-    if ((rc = exit_shell(argc)) == 0)
-    {
-      return 0;
-    }
-  }
-  else if (strcmp(argv[0], "alias") == 0)
-  {
-    if (create_alias(argv, argc) != 0)
-    {
-      wsh_warn(INVALID_ALIAS_USE);
-    }
-    return 1;
-  }
-  else if (strcmp(argv[0], "unalias") == 0)
-  {
-    if (unalias(argv, argc) != 0)
-    {
-      wsh_warn(INVALID_UNALIAS_USE);
-    }
-    return 1;
-  }
-  else if (strcmp(argv[0], "which") == 0)
-  {
-    which_command(argv, argc);
-    return 1;
-  }
-  else if (strcmp(argv[0], "path") == 0)
-  {
-    path_set_and_get(argv, argc);
-    return 1;
-  }
-  else if (strcmp(argv[0], "cd") == 0)
-  {
-    change_directory(argv, argc);
-    return 1;
-  }
-  else if (strcmp(argv[0], "history") == 0)
-  {
-    show_history(argv, argc);
-    return 1;
-  }
-
-  return -1;
-}
-
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -497,12 +435,14 @@ int check_builtins(char *argv[], int argc)
  */
 void interactive_main(void)
 {
-  int keep_going = 1;
   char *argv[MAX_ARGS];
   int argc;
-  while (keep_going)
+  int res;
+  while (1)
   {
+    res = 0;
     printf("%s", PROMPT);
+    fflush(stdout);
 
     char input[MAX_LINE + 1];
     if (fgets(input, sizeof(input), stdin) == NULL)
@@ -520,15 +460,61 @@ void interactive_main(void)
 
     substitute_alias(argv, &argc);
 
-    keep_going = check_builtins(argv, argc);
-    if (keep_going == -1)
+    if (argc == 0)
     {
-      int rc = fork();
-      if (rc < 0)
+      res = 0;
+    }
+    else if (strcmp(argv[0], "exit") == 0)
+    {
+      res = exit_shell(argc);
+      if (res == 0)
+      {
+        free_argv(argv, argc);
+        fflush(stderr);
+        fflush(stdout);
+        return;
+      }
+    }
+    else if (strcmp(argv[0], "alias") == 0)
+    {
+      res = create_alias(argv, argc);
+      if (res == 1)
+      {
+        wsh_warn(INVALID_ALIAS_USE);
+      }
+    }
+    else if (strcmp(argv[0], "unalias") == 0)
+    {
+      res = unalias(argv, argc);
+      if (res == 1)
+      {
+        wsh_warn(INVALID_UNALIAS_USE);
+      }
+    }
+    else if (strcmp(argv[0], "which") == 0)
+    {
+      res = which_command(argv, argc);
+    }
+    else if (strcmp(argv[0], "path") == 0)
+    {
+      res = path_set_and_get(argv, argc);
+    }
+    else if (strcmp(argv[0], "cd") == 0)
+    {
+      res = change_directory(argv, argc);
+    }
+    else if (strcmp(argv[0], "history") == 0)
+    {
+      res = show_history(argv, argc);
+    }
+    else
+    {
+      int pid = fork();
+      if (pid < 0)
       {
         perror("fork");
       }
-      else if (rc == 0)
+      else if (pid == 0)
       {
         char *full_path = get_command_path(argv[0]);
         if (full_path != NULL)
@@ -574,9 +560,9 @@ int batch_main(const char *script_file)
   int keep_going = 1;
   char *argv[MAX_ARGS];
   int argc;
+  int res = 0;
   while (fgets(command, sizeof(command), sfp) != NULL && keep_going)
   {
-
     parseline_no_subst(command, argv, &argc);
 
     if (argc == 0)
@@ -586,15 +572,65 @@ int batch_main(const char *script_file)
 
     substitute_alias(argv, &argc);
 
-    keep_going = check_builtins(argv, argc);
-    if (keep_going == -1)
+    if (argc == 0)
     {
-      int rc = fork();
-      if (rc < 0)
+      res = 0;
+    }
+    else if (strcmp(argv[0], "exit") == 0)
+    {
+      int exit_res = exit_shell(argc);
+      if (exit_res == 1)
+      {
+        res = 1;
+      }
+      else if (exit_res == 0)
+      {
+        fflush(stdout);
+        free_argv(argv, argc);
+        fclose(sfp);
+        return res;
+      }
+    }
+    else if (strcmp(argv[0], "alias") == 0)
+    {
+      res = create_alias(argv, argc);
+      if (res == 1)
+      {
+        wsh_warn(INVALID_ALIAS_USE);
+      }
+    }
+    else if (strcmp(argv[0], "unalias") == 0)
+    {
+      res = unalias(argv, argc);
+      if (res == 1)
+      {
+        wsh_warn(INVALID_UNALIAS_USE);
+      }
+    }
+    else if (strcmp(argv[0], "which") == 0)
+    {
+      res = which_command(argv, argc);
+    }
+    else if (strcmp(argv[0], "path") == 0)
+    {
+      res = path_set_and_get(argv, argc);
+    }
+    else if (strcmp(argv[0], "cd") == 0)
+    {
+      res = change_directory(argv, argc);
+    }
+    else if (strcmp(argv[0], "history") == 0)
+    {
+      res = show_history(argv, argc);
+    }
+    else
+    {
+      int pid = fork();
+      if (pid < 0)
       {
         perror("fork");
       }
-      else if (rc == 0)
+      else if (pid == 0)
       {
         char *full_path = get_command_path(argv[0]);
         if (full_path != NULL)
@@ -609,18 +645,23 @@ int batch_main(const char *script_file)
       }
       else
       {
-        wait(NULL);
+        int status;
+        waitpid(pid, &status, 0); // Wait for child to exit
+        if (WIFEXITED(status))
+        {
+          res = WEXITSTATUS(status);
+        }
       }
     }
 
+    fflush(stdout);
     da_put(history_da, command);
     free_argv(argv, argc);
   }
 
-  int res = EXIT_SUCCESS;
-  if (feof(sfp))
+  if (!feof(sfp))
   {
-    res = EXIT_SUCCESS;
+    res = EXIT_FAILURE;
   }
   else if (ferror(sfp))
   {
