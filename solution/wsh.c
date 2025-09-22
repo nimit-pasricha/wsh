@@ -426,7 +426,6 @@ int show_history(char *argv[], int argc)
       if (command != NULL)
       {
         printf("%s", command);
-        printf("\n");
         return 0;
       }
       wsh_warn(HISTORY_INVALID_ARG);
