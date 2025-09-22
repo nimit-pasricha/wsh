@@ -225,10 +225,21 @@ int substitute_alias(char *argv[], int *argc)
 
     if (new_argc == 0)
     {
-      free_argv(argv, *argc);
-      argv[0] = "";
-      *argc = 0;
-      argv[1] = NULL;
+      if (*argc == 1)
+      {
+        free_argv(argv, *argc);
+        argv[0] = "";
+        *argc = 0;
+        argv[1] = NULL;
+      }
+      else
+      {
+        free(argv[0]);
+        memmove(argv, argv + 1, (*argc - 1) * sizeof(char *));
+        argv[*argc - 1] = NULL;
+        *argc -= 1;
+      }
+
       hm_free(seen_elements);
       return 0;
     }
@@ -300,12 +311,12 @@ int which_command(char *argv[], int argc)
   {
     if (access(name, X_OK) == 0)
     {
-      printf("%s\n", name);
+      printf(WHICH_EXTERNAL, name, name);
       return 0;
     }
     else
     {
-      wsh_warn(WHICH_NOT_FOUND, name);
+      printf(WHICH_NOT_FOUND, name);
       return 1;
     }
   }
@@ -336,7 +347,7 @@ int which_command(char *argv[], int argc)
   }
 
   free(command_path);
-  wsh_warn(WHICH_NOT_FOUND, name);
+  printf(WHICH_NOT_FOUND, name);
   return 1;
 }
 
@@ -368,7 +379,7 @@ int change_directory(char *argv[], int argc)
   {
     if (chdir(argv[1]) == -1)
     {
-      wsh_warn(INVALID_CD_USE);
+      perror("cd");
       return 1;
     }
     return 0;
@@ -384,7 +395,7 @@ int change_directory(char *argv[], int argc)
     }
     if (chdir(home) == -1)
     {
-      wsh_warn(INVALID_CD_USE);
+      perror("cd");
       return 1;
     }
     return 0;
@@ -415,6 +426,7 @@ int show_history(char *argv[], int argc)
       if (command != NULL)
       {
         printf("%s", command);
+        printf("\n");
         return 0;
       }
       wsh_warn(HISTORY_INVALID_ARG);
