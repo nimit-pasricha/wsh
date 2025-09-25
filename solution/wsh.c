@@ -664,62 +664,119 @@ int batch_main(const char *script_file)
   int res = 0;
   while (fgets(command, sizeof(command), sfp) != NULL && keep_going)
   {
-    parseline_no_subst(command, argv, &argc);
 
-    if (argc == 0)
+    char *command_str = command;
+    char *subcommand;
+    while ((subcommand = strsep(&command_str, "|")) != NULL)
     {
-      continue;
-    }
-
-    substitute_alias(argv, &argc);
-
-    int temp_res = check_builtins(argv, argc);
-    if (temp_res == 2)
-    {
-      free_argv(argv, argc);
-      fflush(stderr);
-      fflush(stdout);
-      fclose(sfp);
-      return res;
-    }
-    else if (temp_res == 0 || temp_res == 1)
-    {
-      res = temp_res;
-    }
-    else
-    {
-      int pid = fork();
-      if (pid < 0)
+      if (command_str == NULL)
       {
-        perror("fork");
-      }
-      else if (pid == 0)
-      {
-        char *full_path = get_command_path(argv[0]);
-        if (full_path != NULL)
+        parseline_no_subst(subcommand, argv, &argc);
+
+        if (argc == 0)
         {
-          execv(full_path, argv);
-          free(full_path);
-          wsh_warn(CMD_NOT_FOUND, argv[0]);
+          continue;
         }
-        fclose(sfp);
+
+        substitute_alias(argv, &argc);
+
+        int temp_res = check_builtins(argv, argc);
+        if (temp_res == 2)
+        {
+          free_argv(argv, argc);
+          fflush(stderr);
+          fflush(stdout);
+          fclose(sfp);
+          return res;
+        }
+        else if (temp_res == 0 || temp_res == 1)
+        {
+          res = temp_res;
+        }
+        else
+        {
+          int pid = fork();
+          if (pid < 0)
+          {
+            perror("fork");
+          }
+          else if (pid == 0)
+          {
+            char *full_path = get_command_path(argv[0]);
+            if (full_path != NULL)
+            {
+              execv(full_path, argv);
+              free(full_path);
+              wsh_warn(CMD_NOT_FOUND, argv[0]);
+            }
+            fclose(sfp);
+            free_argv(argv, argc);
+            clean_exit(EXIT_FAILURE);
+          }
+          else
+          {
+            int status;
+            waitpid(pid, &status, 0); // Wait for child to exit
+            if (WIFEXITED(status))
+            {
+              res = WEXITSTATUS(status);
+            }
+          }
+        }
+
+        fflush(stderr);
+        fflush(stdout);
+        da_put(history_da, command);
         free_argv(argv, argc);
-        clean_exit(EXIT_FAILURE);
       }
       else
       {
-        int status;
-        waitpid(pid, &status, 0); // Wait for child to exit
-        if (WIFEXITED(status))
+        int pid = fork();
+        if (pid == 0)
         {
-          res = WEXITSTATUS(status);
+          parseline_no_subst(subcommand, argv, &argc);
+
+          if (argc == 0)
+          {
+            continue;
+          }
+
+          substitute_alias(argv, &argc);
+
+          int temp_res = check_builtins(argv, argc);
+          if (temp_res == 2)
+          {
+            free_argv(argv, argc);
+            fflush(stderr);
+            fflush(stdout);
+            fclose(sfp);
+            continue;
+          }
+          else if (temp_res == 0 || temp_res == 1)
+          {
+            res = temp_res;
+          }
+          else
+          {
+            char *full_path = get_command_path(argv[0]);
+            if (full_path != NULL)
+            {
+              execv(full_path, argv);
+              free(full_path);
+              wsh_warn(CMD_NOT_FOUND, argv[0]);
+            }
+            fclose(sfp);
+            free_argv(argv, argc);
+            clean_exit(EXIT_FAILURE);
+          }
+
+          fflush(stderr);
+          fflush(stdout);
+          da_put(history_da, command);
+          free_argv(argv, argc);
         }
       }
     }
-
-    fflush(stdout);
-    da_put(history_da, command);
-    free_argv(argv, argc);
   }
 
   if (!feof(sfp))
