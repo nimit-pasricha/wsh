@@ -436,6 +436,67 @@ int show_history(char *argv[], int argc)
   return 1;
 }
 
+/**
+ * Checks if command matches any builtins.
+ * Returns: 0 if success
+ *          1 if error
+ *          2 if must exit.
+ *         -1 if builtin not found.
+ */
+int check_builtins(char *argv[], int argc)
+{
+  int res;
+  if (argc == 0)
+  {
+    res = 0;
+  }
+  else if (strcmp(argv[0], "exit") == 0)
+  {
+    res = exit_shell(argc);
+    if (res == 0)
+    {
+      return 2;
+    }
+  }
+  else if (strcmp(argv[0], "alias") == 0)
+  {
+    res = create_alias(argv, argc);
+    if (res == 1)
+    {
+      wsh_warn(INVALID_ALIAS_USE);
+    }
+  }
+  else if (strcmp(argv[0], "unalias") == 0)
+  {
+    res = unalias(argv, argc);
+    if (res == 1)
+    {
+      wsh_warn(INVALID_UNALIAS_USE);
+    }
+  }
+  else if (strcmp(argv[0], "which") == 0)
+  {
+    res = which_command(argv, argc);
+  }
+  else if (strcmp(argv[0], "path") == 0)
+  {
+    res = path_set_and_get(argv, argc);
+  }
+  else if (strcmp(argv[0], "cd") == 0)
+  {
+    res = change_directory(argv, argc);
+  }
+  else if (strcmp(argv[0], "history") == 0)
+  {
+    res = show_history(argv, argc);
+  }
+  else
+  {
+    res = -1;
+  }
+  return res;
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -471,52 +532,16 @@ void interactive_main(void)
 
     substitute_alias(argv, &argc);
 
-    if (argc == 0)
+    res = check_builtins(argv, argc);
+    if (res == 2)
     {
-      res = 0;
+      free_argv(argv, argc);
+      fflush(stderr);
+      fflush(stdout);
+      return;
     }
-    else if (strcmp(argv[0], "exit") == 0)
+    else if (res == 1 || res == 0)
     {
-      res = exit_shell(argc);
-      if (res == 0)
-      {
-        free_argv(argv, argc);
-        fflush(stderr);
-        fflush(stdout);
-        return;
-      }
-    }
-    else if (strcmp(argv[0], "alias") == 0)
-    {
-      res = create_alias(argv, argc);
-      if (res == 1)
-      {
-        wsh_warn(INVALID_ALIAS_USE);
-      }
-    }
-    else if (strcmp(argv[0], "unalias") == 0)
-    {
-      res = unalias(argv, argc);
-      if (res == 1)
-      {
-        wsh_warn(INVALID_UNALIAS_USE);
-      }
-    }
-    else if (strcmp(argv[0], "which") == 0)
-    {
-      res = which_command(argv, argc);
-    }
-    else if (strcmp(argv[0], "path") == 0)
-    {
-      res = path_set_and_get(argv, argc);
-    }
-    else if (strcmp(argv[0], "cd") == 0)
-    {
-      res = change_directory(argv, argc);
-    }
-    else if (strcmp(argv[0], "history") == 0)
-    {
-      res = show_history(argv, argc);
     }
     else
     {
@@ -583,56 +608,18 @@ int batch_main(const char *script_file)
 
     substitute_alias(argv, &argc);
 
-    if (argc == 0)
+    int temp_res = check_builtins(argv, argc);
+    if (temp_res == 2)
     {
-      res = 0;
+      free_argv(argv, argc);
+      fflush(stderr);
+      fflush(stdout);
+      fclose(sfp);
+      return res;
     }
-    else if (strcmp(argv[0], "exit") == 0)
+    else if (temp_res == 0 || temp_res == 1)
     {
-      int exit_res = exit_shell(argc);
-      if (exit_res == 1)
-      {
-        res = 1;
-      }
-      else if (exit_res == 0)
-      {
-        fflush(stdout);
-        free_argv(argv, argc);
-        fclose(sfp);
-        return res;
-      }
-    }
-    else if (strcmp(argv[0], "alias") == 0)
-    {
-      res = create_alias(argv, argc);
-      if (res == 1)
-      {
-        wsh_warn(INVALID_ALIAS_USE);
-      }
-    }
-    else if (strcmp(argv[0], "unalias") == 0)
-    {
-      res = unalias(argv, argc);
-      if (res == 1)
-      {
-        wsh_warn(INVALID_UNALIAS_USE);
-      }
-    }
-    else if (strcmp(argv[0], "which") == 0)
-    {
-      res = which_command(argv, argc);
-    }
-    else if (strcmp(argv[0], "path") == 0)
-    {
-      res = path_set_and_get(argv, argc);
-    }
-    else if (strcmp(argv[0], "cd") == 0)
-    {
-      res = change_directory(argv, argc);
-    }
-    else if (strcmp(argv[0], "history") == 0)
-    {
-      res = show_history(argv, argc);
+      res = temp_res;
     }
     else
     {
