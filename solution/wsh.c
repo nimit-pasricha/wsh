@@ -513,6 +513,9 @@ void interactive_main(void)
   while (1)
   {
     res = 0;
+    while (wait(NULL) > 0)
+    {
+    }
     printf("%s", PROMPT);
     fflush(stdout);
 
@@ -527,25 +530,57 @@ void interactive_main(void)
     char *subcommand;
     while ((subcommand = strsep(&command_str, "|")) != NULL)
     {
-      parseline_no_subst(subcommand, argv, &argc);
-
-      if (argc == 0)
+      if (command_str == NULL)
       {
-        continue;
-      }
+        parseline_no_subst(subcommand, argv, &argc);
 
-      substitute_alias(argv, &argc);
+        if (argc == 0)
+        {
+          continue;
+        }
 
-      res = check_builtins(argv, argc);
-      if (res == 2)
-      {
+        substitute_alias(argv, &argc);
+
+        res = check_builtins(argv, argc);
+        if (res == 2)
+        {
+          free_argv(argv, argc);
+          fflush(stderr);
+          fflush(stdout);
+          return;
+        }
+        else if (res == 1 || res == 0)
+        {
+        }
+        else
+        {
+          int pid = fork();
+          if (pid < 0)
+          {
+            perror("fork");
+          }
+          else if (pid == 0)
+          {
+            char *full_path = get_command_path(argv[0]);
+            if (full_path != NULL)
+            {
+              execv(full_path, argv);
+              free(full_path);
+              wsh_warn(CMD_NOT_FOUND, argv[0]);
+            }
+            free_argv(argv, argc);
+            clean_exit(EXIT_FAILURE);
+          }
+          else
+          {
+            wait(NULL);
+          }
+        }
+
+        da_put(history_da, input);
         free_argv(argv, argc);
         fflush(stderr);
         fflush(stdout);
-        return;
-      }
-      else if (res == 1 || res == 0)
-      {
       }
       else
       {
@@ -553,29 +588,54 @@ void interactive_main(void)
         if (pid < 0)
         {
           perror("fork");
+          da_put(history_da, input);
+          free_argv(argv, argc);
+          fflush(stderr);
+          fflush(stdout);
+          return;
         }
         else if (pid == 0)
         {
-          char *full_path = get_command_path(argv[0]);
-          if (full_path != NULL)
+          parseline_no_subst(subcommand, argv, &argc);
+
+          if (argc == 0)
           {
-            execv(full_path, argv);
-            free(full_path);
-            wsh_warn(CMD_NOT_FOUND, argv[0]);
+            continue;
           }
+
+          substitute_alias(argv, &argc);
+
+          res = check_builtins(argv, argc);
+          if (res == 2)
+          {
+            free_argv(argv, argc);
+            fflush(stderr);
+            fflush(stdout);
+            return;
+          }
+          else if (res == 1 || res == 0)
+          {
+          }
+          else
+          {
+            char *full_path = get_command_path(argv[0]);
+            if (full_path != NULL)
+            {
+              execv(full_path, argv);
+              free(full_path);
+              wsh_warn(CMD_NOT_FOUND, argv[0]);
+            }
+            free_argv(argv, argc);
+            clean_exit(EXIT_FAILURE);
+          }
+
+          da_put(history_da, input);
           free_argv(argv, argc);
-          clean_exit(EXIT_FAILURE);
-        }
-        else
-        {
-          wait(NULL);
+          fflush(stderr);
+          fflush(stdout);
+          clean_exit(EXIT_SUCCESS);
         }
       }
-
-      da_put(history_da, input);
-      free_argv(argv, argc);
-      fflush(stderr);
-      fflush(stdout);
     }
   }
 }
