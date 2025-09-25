@@ -523,55 +523,60 @@ void interactive_main(void)
       continue;
     }
 
-    parseline_no_subst(input, argv, &argc);
+    char *command_str = input;
+    char *subcommand;
+    while ((subcommand = strsep(&command_str, "|")) != NULL)
+    {
+      parseline_no_subst(subcommand, argv, &argc);
 
-    if (argc == 0)
-    {
-      continue;
-    }
-
-    substitute_alias(argv, &argc);
-
-    res = check_builtins(argv, argc);
-    if (res == 2)
-    {
-      free_argv(argv, argc);
-      fflush(stderr);
-      fflush(stdout);
-      return;
-    }
-    else if (res == 1 || res == 0)
-    {
-    }
-    else
-    {
-      int pid = fork();
-      if (pid < 0)
+      if (argc == 0)
       {
-        perror("fork");
+        continue;
       }
-      else if (pid == 0)
+
+      substitute_alias(argv, &argc);
+
+      res = check_builtins(argv, argc);
+      if (res == 2)
       {
-        char *full_path = get_command_path(argv[0]);
-        if (full_path != NULL)
-        {
-          execv(full_path, argv);
-          free(full_path);
-          wsh_warn(CMD_NOT_FOUND, argv[0]);
-        }
         free_argv(argv, argc);
-        clean_exit(EXIT_FAILURE);
+        fflush(stderr);
+        fflush(stdout);
+        return;
+      }
+      else if (res == 1 || res == 0)
+      {
       }
       else
       {
-        wait(NULL);
+        int pid = fork();
+        if (pid < 0)
+        {
+          perror("fork");
+        }
+        else if (pid == 0)
+        {
+          char *full_path = get_command_path(argv[0]);
+          if (full_path != NULL)
+          {
+            execv(full_path, argv);
+            free(full_path);
+            wsh_warn(CMD_NOT_FOUND, argv[0]);
+          }
+          free_argv(argv, argc);
+          clean_exit(EXIT_FAILURE);
+        }
+        else
+        {
+          wait(NULL);
+        }
       }
-    }
 
-    da_put(history_da, input);
-    free_argv(argv, argc);
-    fflush(stderr);
-    fflush(stdout);
+      da_put(history_da, input);
+      free_argv(argv, argc);
+      fflush(stderr);
+      fflush(stdout);
+    }
   }
 }
 
