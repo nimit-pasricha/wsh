@@ -748,6 +748,7 @@ int batch_main(const char *script_file)
       if (argc == 0)
       {
         da_put(history_da, line_dup_for_history);
+        free_argv(argv, argc);
         free(line_dup_for_history);
         continue;
       }
@@ -756,15 +757,14 @@ int batch_main(const char *script_file)
 
       if (res == 2) // 'exit' builtin.
       {
-        free(line_dup_for_history);
         free_argv(argv, argc);
+        free(line_dup_for_history);
         fclose(sfp);
         return final_status;
       }
       else if (res == 1 || res == 0) // all other builtins
       {
         final_status = res;
-        free_argv(argv, argc);
       }
       else
       {
@@ -798,8 +798,8 @@ int batch_main(const char *script_file)
             final_status = WEXITSTATUS(status);
           }
         }
-        free_argv(argv, argc);
       }
+      free_argv(argv, argc);
     }
     else // handle piping (num_commands > 1)
     {
@@ -849,6 +849,7 @@ int batch_main(const char *script_file)
           {
             wsh_warn(EMPTY_PIPE_SEGMENT);
             free(line_dup_for_history);
+            free_argv(argv, argc);
             clean_exit(EXIT_FAILURE);
           }
 
