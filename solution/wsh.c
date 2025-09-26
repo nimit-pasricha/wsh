@@ -567,6 +567,7 @@ void interactive_main(void)
       {
         da_put(history_da, input_dup_for_history);
         free(input_dup_for_history);
+        free_argv(argv, argc);
         continue;
       }
 
@@ -579,7 +580,6 @@ void interactive_main(void)
       }
       if (res == 1 || res == 0) // all other builtins.
       {
-        free_argv(argv, argc);
       }
       else
       {
@@ -605,8 +605,8 @@ void interactive_main(void)
         {
           wait(NULL);
         }
-        free_argv(argv, argc);
       }
+      free_argv(argv, argc);
     }
     else // handle piping (num_commands > 1)
     {
@@ -655,6 +655,7 @@ void interactive_main(void)
           if (argc == 0)
           {
             wsh_warn(EMPTY_PIPE_SEGMENT);
+            free_argv(argv, argc);
             free(input_dup_for_history);
             clean_exit(EXIT_FAILURE);
           }
