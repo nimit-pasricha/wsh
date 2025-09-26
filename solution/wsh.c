@@ -588,7 +588,6 @@ void interactive_main(void)
           execv(full_path, argv);
           free(full_path);
         }
-        wsh_warn(CMD_NOT_FOUND, argv[0]);
         free_argv(argv, argc);
         clean_exit(EXIT_FAILURE);
       }
@@ -654,7 +653,6 @@ void interactive_main(void)
             execv(full_path, argv);
             free(full_path);
           }
-          wsh_warn(CMD_NOT_FOUND, argv[0]);
           free_argv(argv, argc);
           clean_exit(EXIT_FAILURE);
         }
@@ -752,7 +750,6 @@ int batch_main(const char *script_file)
           execv(full_path, argv);
           free(full_path);
         }
-        wsh_warn(CMD_NOT_FOUND, argv[0]);
         free_argv(argv, argc);
         clean_exit(EXIT_FAILURE);
       }
@@ -824,7 +821,6 @@ int batch_main(const char *script_file)
             execv(full_path, argv);
             free(full_path);
           }
-          wsh_warn(CMD_NOT_FOUND, argv[0]);
           free_argv(argv, argc);
           clean_exit(EXIT_FAILURE);
         }
