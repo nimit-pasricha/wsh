@@ -526,16 +526,20 @@ void interactive_main(void)
       continue;
     }
 
+    int pipes[128][2];
     char *command_str = input;
     char *subcommand;
+    int command_num = 0;
     while ((subcommand = strsep(&command_str, "|")) != NULL)
     {
       if (command_str == NULL)
       {
+
         parseline_no_subst(subcommand, argv, &argc);
 
         if (argc == 0)
         {
+          command_num++;
           continue;
         }
 
@@ -561,6 +565,11 @@ void interactive_main(void)
           }
           else if (pid == 0)
           {
+            if (command_num > 0)
+            {
+              dup2(pipes[command_num - 1][0], STDIN_FILENO);
+              close(pipes[command_num - 1][0]);
+            }
             char *full_path = get_command_path(argv[0]);
             if (full_path != NULL)
             {
@@ -573,6 +582,7 @@ void interactive_main(void)
           }
           else
           {
+            close(pipes[command_num - 1][0]);
             wait(NULL);
           }
         }
@@ -584,11 +594,21 @@ void interactive_main(void)
       }
       else
       {
+        if (pipe(pipes[command_num]) < 0)
+        {
+          perror("pipe");
+          free_argv(argv, argc);
+          fflush(stderr);
+          fflush(stdout);
+          return;
+        }
+        
         int pid = fork();
+
         if (pid < 0)
         {
           perror("fork");
-          da_put(history_da, input);
+          // da_put(history_da, input);
           free_argv(argv, argc);
           fflush(stderr);
           fflush(stdout);
@@ -596,10 +616,17 @@ void interactive_main(void)
         }
         else if (pid == 0)
         {
+          dup2(pipes[command_num - 1][0], STDIN_FILENO);
+          dup2(pipes[command_num][1], STDOUT_FILENO);
+          close(pipes[command_num - 1][0]);
+          close(pipes[command_num][0]);
+          close(pipes[command_num][1]);
+
           parseline_no_subst(subcommand, argv, &argc);
 
           if (argc == 0)
           {
+            command_num++;
             continue;
           }
 
@@ -635,7 +662,13 @@ void interactive_main(void)
           fflush(stdout);
           clean_exit(EXIT_SUCCESS);
         }
+        else
+        {
+          close(pipes[command_num - 1][0]);
+          close(pipes[command_num][1]);
+        }
       }
+      command_num++;
     }
   }
 }
