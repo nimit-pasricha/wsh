@@ -546,6 +546,7 @@ void interactive_main(void)
     // user just pressed 'Enter'.
     if (num_commands == 0)
     {
+      free(input_dup_for_history);
       continue;
     }
 
@@ -572,6 +573,7 @@ void interactive_main(void)
       int res = check_builtins(argv, argc);
       if (res == 2) // 'exit' builtin.
       {
+        free(input_dup_for_history);
         free_argv(argv, argc);
         return;
       }
@@ -595,6 +597,7 @@ void interactive_main(void)
             execv(full_path, argv);
             free(full_path);
           }
+          free(input_dup_for_history);
           free_argv(argv, argc);
           clean_exit(EXIT_FAILURE);
         }
@@ -652,6 +655,7 @@ void interactive_main(void)
           if (argc == 0)
           {
             wsh_warn(EMPTY_PIPE_SEGMENT);
+            free(input_dup_for_history);
             clean_exit(EXIT_FAILURE);
           }
 
@@ -668,6 +672,7 @@ void interactive_main(void)
             execv(full_path, argv);
             free(full_path);
           }
+          free(input_dup_for_history);
           free_argv(argv, argc);
           clean_exit(EXIT_FAILURE);
         }
