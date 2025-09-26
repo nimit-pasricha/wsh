@@ -535,6 +535,7 @@ void interactive_main(void)
     char *commands[MAX_ARGS];
     int num_commands = 0;
     char *input_copy = input;
+    char *input_dup_for_history = strdup(input);
     char *subcommand;
 
     while ((subcommand = strsep(&input_copy, "|")) != NULL && num_commands < MAX_ARGS)
@@ -548,7 +549,11 @@ void interactive_main(void)
       continue;
     }
 
-    da_put(history_da, input);
+    // I need to do this otherwise the external command
+    // will print its output before a previously executed
+    // builtin command.
+    // fflush(stdout);
+    // fflush(stderr);
 
     // handle single command (no piping)
     if (num_commands == 1)
@@ -559,6 +564,8 @@ void interactive_main(void)
       // aliased to nothing. (eg: alias test = '')
       if (argc == 0)
       {
+        da_put(history_da, input_dup_for_history);
+        free(input_dup_for_history);
         continue;
       }
 
@@ -568,34 +575,35 @@ void interactive_main(void)
         free_argv(argv, argc);
         return;
       }
-      else if (res == 1 || res == 0) // all other builtins.
+      if (res == 1 || res == 0) // all other builtins.
       {
         free_argv(argv, argc);
-        continue;
-      }
-
-      // Execute single external command.
-      int pid = fork();
-      if (pid < 0)
-      {
-        perror("fork");
-      }
-      else if (pid == 0)
-      {
-        char *full_path = get_command_path(argv[0]);
-        if (full_path != NULL)
-        {
-          execv(full_path, argv);
-          free(full_path);
-        }
-        free_argv(argv, argc);
-        clean_exit(EXIT_FAILURE);
       }
       else
       {
-        wait(NULL);
+        // Execute single external command.
+        int pid = fork();
+        if (pid < 0)
+        {
+          perror("fork");
+        }
+        else if (pid == 0)
+        {
+          char *full_path = get_command_path(argv[0]);
+          if (full_path != NULL)
+          {
+            execv(full_path, argv);
+            free(full_path);
+          }
+          free_argv(argv, argc);
+          clean_exit(EXIT_FAILURE);
+        }
+        else
+        {
+          wait(NULL);
+        }
+        free_argv(argv, argc);
       }
-      free_argv(argv, argc);
     }
     else // handle piping (num_commands > 1)
     {
@@ -664,6 +672,8 @@ void interactive_main(void)
         close(pipes[i][1]);
       }
     }
+    da_put(history_da, input_dup_for_history);
+    free(input_dup_for_history);
   }
 }
 
@@ -691,12 +701,11 @@ int batch_main(const char *script_file)
 
   while (fgets(line, sizeof(line), sfp) != NULL)
   {
-    da_put(history_da, line);
-
     // parse commands and store into commands array.
     char *commands[MAX_ARGS];
     int num_commands = 0;
     char *line_copy = line;
+    char *line_dup_for_history = strdup(line);
     char *subcommand;
     while ((subcommand = strsep(&line_copy, "|")) != NULL && num_commands < MAX_ARGS)
     {
@@ -708,6 +717,12 @@ int batch_main(const char *script_file)
     {
       continue;
     }
+
+    // I need to do this otherwise the current external command
+    // will print its output before a previously executed
+    // builtin command.
+    fflush(stdout);
+    fflush(stderr);
 
     // handle single command (no piping)
     if (num_commands == 1)
@@ -728,43 +743,44 @@ int batch_main(const char *script_file)
         fclose(sfp);
         return final_status;
       }
-      if (res == 1 || res == 0) // all other builtins
+      else if (res == 1 || res == 0) // all other builtins
       {
         final_status = res;
         free_argv(argv, argc);
-        continue;
-      }
-
-      // Execute single external command.
-      int pid = fork();
-      if (pid < 0)
-      {
-        perror("fork");
-      }
-      else if (pid == 0)
-      {
-        fclose(sfp);
-        char *full_path = get_command_path(argv[0]);
-        if (full_path != NULL)
-        {
-          execv(full_path, argv);
-          free(full_path);
-        }
-        free_argv(argv, argc);
-        clean_exit(EXIT_FAILURE);
       }
       else
       {
-        // change parent's exit status to
-        // whatever the child's exit status was.
-        int status;
-        waitpid(pid, &status, 0);
-        if (WIFEXITED(status))
+        // Execute single external command.
+        int pid = fork();
+        if (pid < 0)
         {
-          final_status = WEXITSTATUS(status);
+          perror("fork");
         }
+        else if (pid == 0)
+        {
+          fclose(sfp);
+          char *full_path = get_command_path(argv[0]);
+          if (full_path != NULL)
+          {
+            execv(full_path, argv);
+            free(full_path);
+          }
+          free_argv(argv, argc);
+          clean_exit(EXIT_FAILURE);
+        }
+        else
+        {
+          // change parent's exit status to
+          // whatever the child's exit status was.
+          int status;
+          waitpid(pid, &status, 0);
+          if (WIFEXITED(status))
+          {
+            final_status = WEXITSTATUS(status);
+          }
+        }
+        free_argv(argv, argc);
       }
-      free_argv(argv, argc);
     }
     else // handle piping (num_commands > 1)
     {
@@ -844,6 +860,8 @@ int batch_main(const char *script_file)
         }
       }
     }
+    da_put(history_da, line_dup_for_history);
+    free(line_dup_for_history);
   }
   fclose(sfp);
   return final_status;
