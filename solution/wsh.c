@@ -610,80 +610,107 @@ void interactive_main(void)
     }
     else // handle piping (num_commands > 1)
     {
-      // Create all pipes.
-      int num_pipes = num_commands - 1;
-      int pipes[num_pipes][2];
-      for (int i = 0; i < num_pipes; i++)
-      {
-        if (pipe(pipes[i]) < 0)
-        {
-          perror("pipe");
-          break;
-        }
-      }
+      int is_valid_pipeline = 1;
 
-      // Start all child processes.
+      // Validate if commands exist.
       for (int i = 0; i < num_commands; i++)
       {
-        int pid = fork();
-        if (pid < 0)
+        char *command_path = NULL;
+
+        parseline_no_subst(commands[i], argv, &argc);
+        substitute_alias(argv, &argc);
+
+        if (argc == 0)
         {
-          perror("fork");
-          break;
+          is_valid_pipeline = 0;
+          wsh_warn(EMPTY_PIPE_SEGMENT);
+        }
+        else if (check_builtins(argv, argc) < 0 && (command_path = get_command_path(argv[0])) == NULL)
+        {
+          is_valid_pipeline = 0;
         }
 
-        if (pid == 0)
-        {
-          if (i > 0)
-          {
-            dup2(pipes[i - 1][0], STDIN_FILENO);
-          }
-
-          if (i < num_commands - 1)
-          {
-            dup2(pipes[i][1], STDOUT_FILENO);
-          }
-
-          for (int j = 0; j < num_pipes; j++)
-          {
-            close(pipes[j][0]);
-            close(pipes[j][1]);
-          }
-
-          parseline_no_subst(commands[i], argv, &argc);
-          substitute_alias(argv, &argc);
-          if (argc == 0)
-          {
-            wsh_warn(EMPTY_PIPE_SEGMENT);
-            free_argv(argv, argc);
-            free(input_dup_for_history);
-            clean_exit(EXIT_FAILURE);
-          }
-
-          int res = check_builtins(argv, argc);
-          if (res == 0 || res == 1 || res == 2)
-          {
-            free_argv(argv, argc);
-            free(input_dup_for_history);
-            clean_exit(EXIT_SUCCESS);
-          }
-
-          char *full_path = get_command_path(argv[0]);
-          if (full_path != NULL)
-          {
-            execv(full_path, argv);
-            free(full_path);
-          }
-          free(input_dup_for_history);
-          free_argv(argv, argc);
-          clean_exit(EXIT_FAILURE);
-        }
+        free_argv(argv, argc);
+        free(command_path);
       }
 
-      for (int i = 0; i < num_pipes; i++)
+      if (is_valid_pipeline)
       {
-        close(pipes[i][0]);
-        close(pipes[i][1]);
+        // Create all pipes.
+        int num_pipes = num_commands - 1;
+        int pipes[num_pipes][2];
+        for (int i = 0; i < num_pipes; i++)
+        {
+          if (pipe(pipes[i]) < 0)
+          {
+            perror("pipe");
+            break;
+          }
+        }
+
+        // Start all child processes.
+        for (int i = 0; i < num_commands; i++)
+        {
+          int pid = fork();
+          if (pid < 0)
+          {
+            perror("fork");
+            break;
+          }
+
+          if (pid == 0)
+          {
+            if (i > 0)
+            {
+              dup2(pipes[i - 1][0], STDIN_FILENO);
+            }
+
+            if (i < num_commands - 1)
+            {
+              dup2(pipes[i][1], STDOUT_FILENO);
+            }
+
+            for (int j = 0; j < num_pipes; j++)
+            {
+              close(pipes[j][0]);
+              close(pipes[j][1]);
+            }
+
+            parseline_no_subst(commands[i], argv, &argc);
+            substitute_alias(argv, &argc);
+            if (argc == 0)
+            {
+              wsh_warn(EMPTY_PIPE_SEGMENT);
+              free_argv(argv, argc);
+              free(input_dup_for_history);
+              clean_exit(EXIT_FAILURE);
+            }
+
+            int res = check_builtins(argv, argc);
+            if (res == 0 || res == 1 || res == 2)
+            {
+              free_argv(argv, argc);
+              free(input_dup_for_history);
+              clean_exit(EXIT_SUCCESS);
+            }
+
+            char *full_path = get_command_path(argv[0]);
+            if (full_path != NULL)
+            {
+              execv(full_path, argv);
+              free(full_path);
+            }
+            free(input_dup_for_history);
+            free_argv(argv, argc);
+            clean_exit(EXIT_FAILURE);
+          }
+        }
+
+        for (int i = 0; i < num_pipes; i++)
+        {
+          close(pipes[i][0]);
+          close(pipes[i][1]);
+        }
       }
     }
     da_put(history_da, input_dup_for_history);
@@ -803,91 +830,118 @@ int batch_main(const char *script_file)
     }
     else // handle piping (num_commands > 1)
     {
-      // Create all pipes.
-      int num_pipes = num_commands - 1;
-      int pipes[num_pipes][2];
-      for (int i = 0; i < num_pipes; i++)
-      {
-        if (pipe(pipes[i]) < 0)
-        {
-          perror("pipe");
-          break;
-        }
-      }
+      int is_valid_pipeline = 1;
 
-      // Start all child processes.
-      pid_t pids[num_commands];
+      // Validate if commands exist.
       for (int i = 0; i < num_commands; i++)
       {
-        pids[i] = fork();
-        if (pids[i] < 0)
+        char *command_path = NULL;
+
+        parseline_no_subst(commands[i], argv, &argc);
+        substitute_alias(argv, &argc);
+
+        if (argc == 0)
         {
-          perror("fork");
-          break;
+          is_valid_pipeline = 0;
+          wsh_warn(EMPTY_PIPE_SEGMENT);
         }
-        else if (pids[i] == 0)
+        else if (check_builtins(argv, argc) < 0 && (command_path = get_command_path(argv[0])) == NULL)
         {
-          fclose(sfp);
-          if (i > 0)
-          {
-            dup2(pipes[i - 1][0], STDIN_FILENO);
-          }
-          if (i < num_commands - 1)
-          {
-            dup2(pipes[i][1], STDOUT_FILENO);
-          }
+          is_valid_pipeline = 0;
+        }
 
-          for (int j = 0; j < num_pipes; j++)
-          {
-            close(pipes[j][0]);
-            close(pipes[j][1]);
-          }
+        free_argv(argv, argc);
+        free(command_path);
+      }
 
-          parseline_no_subst(commands[i], argv, &argc);
-          substitute_alias(argv, &argc);
-          if (argc == 0)
+      if (is_valid_pipeline)
+      {
+        // Create all pipes.
+        int num_pipes = num_commands - 1;
+        int pipes[num_pipes][2];
+        for (int i = 0; i < num_pipes; i++)
+        {
+          if (pipe(pipes[i]) < 0)
           {
-            wsh_warn(EMPTY_PIPE_SEGMENT);
+            perror("pipe");
+            break;
+          }
+        }
+
+        // Start all child processes.
+        pid_t pids[num_commands];
+        for (int i = 0; i < num_commands; i++)
+        {
+          pids[i] = fork();
+          if (pids[i] < 0)
+          {
+            perror("fork");
+            break;
+          }
+          else if (pids[i] == 0)
+          {
+            fclose(sfp);
+            if (i > 0)
+            {
+              dup2(pipes[i - 1][0], STDIN_FILENO);
+            }
+            if (i < num_commands - 1)
+            {
+              dup2(pipes[i][1], STDOUT_FILENO);
+            }
+
+            for (int j = 0; j < num_pipes; j++)
+            {
+              close(pipes[j][0]);
+              close(pipes[j][1]);
+            }
+
+            parseline_no_subst(commands[i], argv, &argc);
+            substitute_alias(argv, &argc);
+            if (argc == 0)
+            {
+              wsh_warn(EMPTY_PIPE_SEGMENT);
+              free(line_dup_for_history);
+              free_argv(argv, argc);
+              clean_exit(EXIT_FAILURE);
+            }
+
+            int res = check_builtins(argv, argc);
+            if (res == 0 || res == 1 || res == 2)
+            {
+              free_argv(argv, argc);
+              free(line_dup_for_history);
+              clean_exit(EXIT_SUCCESS);
+            }
+
+            char *full_path = get_command_path(argv[0]);
+            if (full_path != NULL)
+            {
+              execv(full_path, argv);
+              free(full_path);
+            }
             free(line_dup_for_history);
             free_argv(argv, argc);
             clean_exit(EXIT_FAILURE);
           }
-
-          int res = check_builtins(argv, argc);
-          if (res == 0 || res == 1 || res == 2)
-          {
-            free_argv(argv, argc);
-            free(line_dup_for_history);
-            clean_exit(EXIT_SUCCESS);
-          }
-
-          char *full_path = get_command_path(argv[0]);
-          if (full_path != NULL)
-          {
-            execv(full_path, argv);
-            free(full_path);
-          }
-          free(line_dup_for_history);
-          free_argv(argv, argc);
-          clean_exit(EXIT_FAILURE);
         }
-      }
 
-      for (int i = 0; i < num_pipes; i++)
-      {
-        close(pipes[i][0]);
-        close(pipes[i][1]);
-      }
-
-      // parent wait for every child to finish.
-      for (int i = 0; i < num_commands; i++)
-      {
-        int status;
-        waitpid(pids[i], &status, 0);
-        // only get the exit status of the last command.
-        if (i == num_commands - 1 && WIFEXITED(status))
+        for (int i = 0; i < num_pipes; i++)
         {
-          final_status = WEXITSTATUS(status);
+          close(pipes[i][0]);
+          close(pipes[i][1]);
+        }
+
+        // parent wait for every child to finish.
+        for (int i = 0; i < num_commands; i++)
+        {
+          int status;
+          waitpid(pids[i], &status, 0);
+          // only get the exit status of the last command.
+          if (i == num_commands - 1 && WIFEXITED(status))
+          {
+            final_status = WEXITSTATUS(status);
+          }
         }
       }
     }
