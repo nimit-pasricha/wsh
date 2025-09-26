@@ -509,176 +509,159 @@ void interactive_main(void)
 {
   char *argv[MAX_ARGS];
   int argc;
-  int res;
+
   while (1)
   {
-    res = 0;
     while (wait(NULL) > 0)
     {
+      // Wait until all children finish executing.
     }
+
     printf("%s", PROMPT);
     fflush(stdout);
 
     char input[MAX_LINE + 1];
     if (fgets(input, sizeof(input), stdin) == NULL)
     {
-      fprintf(stderr, "fgets error\n");
+      printf("\n");
+      break;
+    }
+
+    // parse commands and store into commands array.
+    char *commands[MAX_ARGS];
+    int num_commands = 0;
+    char *input_copy = input;
+    char *subcommand;
+
+    while ((subcommand = strsep(&input_copy, "|")) != NULL && num_commands < MAX_ARGS)
+    {
+      commands[num_commands++] = subcommand;
+    }
+
+    // user just pressed 'Enter'.
+    if (num_commands == 0)
+    {
       continue;
     }
 
-    int pipes[128][2];
-    char *command_str = input;
-    char *subcommand;
-    int command_num = 0;
-    while ((subcommand = strsep(&command_str, "|")) != NULL)
+    da_put(history_da, input);
+
+    // handle single command (no piping)
+    if (num_commands == 1)
     {
-      if (command_str == NULL)
+      parseline_no_subst(commands[0], argv, &argc);
+      substitute_alias(argv, &argc);
+
+      // aliased to nothing. (eg: alias test = '')
+      if (argc == 0)
       {
+        continue;
+      }
 
-        parseline_no_subst(subcommand, argv, &argc);
-
-        if (argc == 0)
-        {
-          if (command_num == 0)
-          {
-            command_num++;
-            continue;
-          }
-          wsh_warn(EMPTY_PIPE_SEGMENT);
-          break;
-        }
-
-        substitute_alias(argv, &argc);
-
-        res = check_builtins(argv, argc);
-        if (res == 2)
-        {
-          free_argv(argv, argc);
-          fflush(stderr);
-          fflush(stdout);
-          return;
-        }
-        else if (res == 1 || res == 0)
-        {
-        }
-        else
-        {
-          int pid = fork();
-          if (pid < 0)
-          {
-            perror("fork");
-          }
-          else if (pid == 0)
-          {
-            if (command_num > 0)
-            {
-              dup2(pipes[command_num - 1][0], STDIN_FILENO);
-              close(pipes[command_num - 1][0]);
-              close(pipes[command_num - 1][1]);
-              close(pipes[command_num][0]);
-              close(pipes[command_num][1]);
-            }
-            char *full_path = get_command_path(argv[0]);
-            if (full_path != NULL)
-            {
-              execv(full_path, argv);
-              free(full_path);
-              wsh_warn(CMD_NOT_FOUND, argv[0]);
-            }
-            free_argv(argv, argc);
-            clean_exit(EXIT_FAILURE);
-          }
-          else
-          {
-            close(pipes[command_num - 1][0]);
-            close(pipes[command_num - 1][1]);
-            close(pipes[command_num][0]);
-            close(pipes[command_num][1]);
-            wait(NULL);
-          }
-        }
-
-        da_put(history_da, input);
+      int res = check_builtins(argv, argc);
+      if (res == 2) // 'exit' builtin.
+      {
         free_argv(argv, argc);
-        fflush(stderr);
-        fflush(stdout);
+        return;
+      }
+      else if (res == 1 || res == 0) // all other builtins.
+      {
+        free_argv(argv, argc);
+        continue;
+      }
+
+      // Execute single external command.
+      int pid = fork();
+      if (pid < 0)
+      {
+        perror("fork");
+      }
+      else if (pid == 0)
+      {
+        char *full_path = get_command_path(argv[0]);
+        if (full_path != NULL)
+        {
+          execv(full_path, argv);
+          free(full_path);
+        }
+        wsh_warn(CMD_NOT_FOUND, argv[0]);
+        free_argv(argv, argc);
+        clean_exit(EXIT_FAILURE);
       }
       else
       {
-        if (pipe(pipes[command_num]) < 0)
+        wait(NULL);
+      }
+      free_argv(argv, argc);
+    }
+    else // handle piping (num_commands > 1)
+    {
+      // Create all pipes.
+      int num_pipes = num_commands - 1;
+      int pipes[num_pipes][2];
+      for (int i = 0; i < num_pipes; i++)
+      {
+        if (pipe(pipes[i]) < 0)
         {
           perror("pipe");
-          free_argv(argv, argc);
-          fflush(stderr);
-          fflush(stdout);
-          return;
+          // TODO: should I break here?!?!?!?!
         }
+      }
 
+      // Start all child processes.
+      for (int i = 0; i < num_commands; i++)
+      {
         int pid = fork();
-
         if (pid < 0)
         {
           perror("fork");
-          free_argv(argv, argc);
-          fflush(stderr);
-          fflush(stdout);
-          return;
+          break;
         }
-        else if (pid == 0)
+
+        if (pid == 0)
         {
-          dup2(pipes[command_num - 1][0], STDIN_FILENO);
-          dup2(pipes[command_num][1], STDOUT_FILENO);
-          close(pipes[command_num - 1][0]);
-          close(pipes[command_num][0]);
-          close(pipes[command_num][1]);
+          if (i > 0)
+          {
+            dup2(pipes[i - 1][0], STDIN_FILENO);
+          }
 
-          parseline_no_subst(subcommand, argv, &argc);
+          if (i < num_commands - 1)
+          {
+            dup2(pipes[i][1], STDOUT_FILENO);
+          }
 
+          for (int j = 0; j < num_pipes; j++)
+          {
+            close(pipes[j][0]);
+            close(pipes[j][1]);
+          }
+
+          parseline_no_subst(commands[i], argv, &argc);
           if (argc == 0)
           {
-            command_num++;
-            continue;
+            wsh_warn(EMPTY_PIPE_SEGMENT);
+            clean_exit(EXIT_FAILURE);
           }
 
           substitute_alias(argv, &argc);
 
-          res = check_builtins(argv, argc);
-          if (res == 2)
+          char *full_path = get_command_path(argv[0]);
+          if (full_path != NULL)
           {
-            free_argv(argv, argc);
-            fflush(stderr);
-            fflush(stdout);
-            return;
+            execv(full_path, argv);
+            free(full_path);
           }
-          else if (res == 1 || res == 0)
-          {
-          }
-          else
-          {
-            char *full_path = get_command_path(argv[0]);
-            if (full_path != NULL)
-            {
-              execv(full_path, argv);
-              free(full_path);
-              wsh_warn(CMD_NOT_FOUND, argv[0]);
-            }
-            free_argv(argv, argc);
-            clean_exit(EXIT_FAILURE);
-          }
-
-          da_put(history_da, input);
+          wsh_warn(CMD_NOT_FOUND, argv[0]);
           free_argv(argv, argc);
-          fflush(stderr);
-          fflush(stdout);
-          clean_exit(EXIT_SUCCESS);
-        }
-        else
-        {
-          close(pipes[command_num - 1][0]);
-          close(pipes[command_num][1]);
+          clean_exit(EXIT_FAILURE);
         }
       }
-      command_num++;
+
+      for (int i = 0; i < num_pipes; i++)
+      {
+        close(pipes[i][0]);
+        close(pipes[i][1]);
+      }
     }
   }
 }
