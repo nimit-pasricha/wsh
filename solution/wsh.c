@@ -539,8 +539,13 @@ void interactive_main(void)
 
         if (argc == 0)
         {
-          command_num++;
-          continue;
+          if (command_num == 0)
+          {
+            command_num++;
+            continue;
+          }
+          wsh_warn(EMPTY_PIPE_SEGMENT);
+          break;
         }
 
         substitute_alias(argv, &argc);
@@ -614,7 +619,6 @@ void interactive_main(void)
         if (pid < 0)
         {
           perror("fork");
-          // da_put(history_da, input);
           free_argv(argv, argc);
           fflush(stderr);
           fflush(stdout);
@@ -703,7 +707,6 @@ int batch_main(const char *script_file)
   int res = 0;
   while (fgets(command, sizeof(command), sfp) != NULL && keep_going)
   {
-
     char *command_str = command;
     char *subcommand;
     while ((subcommand = strsep(&command_str, "|")) != NULL)
