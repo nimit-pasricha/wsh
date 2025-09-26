@@ -552,8 +552,8 @@ void interactive_main(void)
     // I need to do this otherwise the external command
     // will print its output before a previously executed
     // builtin command.
-    // fflush(stdout);
-    // fflush(stderr);
+    fflush(stdout);
+    fflush(stderr);
 
     // handle single command (no piping)
     if (num_commands == 1)
@@ -653,6 +653,13 @@ void interactive_main(void)
           {
             wsh_warn(EMPTY_PIPE_SEGMENT);
             clean_exit(EXIT_FAILURE);
+          }
+
+          int res = check_builtins(argv, argc);
+          if (res == 0 || res == 1 || res == 2)
+          {
+            free_argv(argv, argc);
+            clean_exit(EXIT_SUCCESS);
           }
 
           char *full_path = get_command_path(argv[0]);
@@ -828,6 +835,14 @@ int batch_main(const char *script_file)
           substitute_alias(argv, &argc);
           if (argc == 0)
           {
+            wsh_warn(EMPTY_PIPE_SEGMENT);
+            clean_exit(EXIT_FAILURE);
+          }
+
+          int res = check_builtins(argv, argc);
+          if (res == 0 || res == 1 || res == 2)
+          {
+            free_argv(argv, argc);
             clean_exit(EXIT_SUCCESS);
           }
 
