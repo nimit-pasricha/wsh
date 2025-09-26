@@ -663,6 +663,7 @@ void interactive_main(void)
           if (res == 0 || res == 1 || res == 2)
           {
             free_argv(argv, argc);
+            free(input_dup_for_history);
             clean_exit(EXIT_SUCCESS);
           }
 
@@ -727,6 +728,7 @@ int batch_main(const char *script_file)
     // Blank line.
     if (num_commands == 0)
     {
+      free(line_dup_for_history);
       continue;
     }
 
@@ -744,6 +746,8 @@ int batch_main(const char *script_file)
 
       if (argc == 0)
       {
+        da_put(history_da, line_dup_for_history);
+        free(line_dup_for_history);
         continue;
       }
 
@@ -751,6 +755,7 @@ int batch_main(const char *script_file)
 
       if (res == 2) // 'exit' builtin.
       {
+        free(line_dup_for_history);
         free_argv(argv, argc);
         fclose(sfp);
         return final_status;
@@ -777,6 +782,7 @@ int batch_main(const char *script_file)
             execv(full_path, argv);
             free(full_path);
           }
+          free(line_dup_for_history);
           free_argv(argv, argc);
           clean_exit(EXIT_FAILURE);
         }
@@ -841,6 +847,7 @@ int batch_main(const char *script_file)
           if (argc == 0)
           {
             wsh_warn(EMPTY_PIPE_SEGMENT);
+            free(line_dup_for_history);
             clean_exit(EXIT_FAILURE);
           }
 
@@ -848,6 +855,7 @@ int batch_main(const char *script_file)
           if (res == 0 || res == 1 || res == 2)
           {
             free_argv(argv, argc);
+            free(line_dup_for_history);
             clean_exit(EXIT_SUCCESS);
           }
 
@@ -857,6 +865,7 @@ int batch_main(const char *script_file)
             execv(full_path, argv);
             free(full_path);
           }
+          free(line_dup_for_history);
           free_argv(argv, argc);
           clean_exit(EXIT_FAILURE);
         }
