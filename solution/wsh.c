@@ -527,7 +527,7 @@ void interactive_main(void)
     char input[MAX_LINE + 1];
     if (fgets(input, sizeof(input), stdin) == NULL)
     {
-      printf("\n");
+      fprintf(stderr, "fgets error\n");
       break;
     }
 
@@ -647,7 +647,6 @@ void interactive_main(void)
             wsh_warn(EMPTY_PIPE_SEGMENT);
             clean_exit(EXIT_FAILURE);
           }
-
 
           char *full_path = get_command_path(argv[0]);
           if (full_path != NULL)
