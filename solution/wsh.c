@@ -213,8 +213,12 @@ int create_alias(char *argv[], int argc)
 
 int substitute_alias(char *argv[], int *argc)
 {
-  HashMap *seen_elements = hm_create();
+  if (*argc == 0)
+  {
+    return 0;
+  }
 
+  HashMap *seen_elements = hm_create();
   char *new_argv[MAX_ARGS];
   int new_argc = 1;
   char *command = hm_get(alias_hm, argv[0]);
@@ -637,13 +641,13 @@ void interactive_main(void)
           }
 
           parseline_no_subst(commands[i], argv, &argc);
+          substitute_alias(argv, &argc);
           if (argc == 0)
           {
             wsh_warn(EMPTY_PIPE_SEGMENT);
             clean_exit(EXIT_FAILURE);
           }
 
-          substitute_alias(argv, &argc);
 
           char *full_path = get_command_path(argv[0]);
           if (full_path != NULL)
@@ -713,6 +717,11 @@ int batch_main(const char *script_file)
     {
       parseline_no_subst(commands[0], argv, &argc);
       substitute_alias(argv, &argc);
+
+      if (argc == 0)
+      {
+        continue;
+      }
 
       int res = check_builtins(argv, argc);
 
@@ -828,10 +837,12 @@ int batch_main(const char *script_file)
         close(pipes[i][1]);
       }
 
+      // parent wait for every child to finish.
       for (int i = 0; i < num_commands; i++)
       {
         int status;
         waitpid(pids[i], &status, 0);
+        // only get the exit status of the last command.
         if (i == num_commands - 1 && WIFEXITED(status))
         {
           final_status = WEXITSTATUS(status);
