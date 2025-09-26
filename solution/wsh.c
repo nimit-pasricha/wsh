@@ -569,6 +569,9 @@ void interactive_main(void)
             {
               dup2(pipes[command_num - 1][0], STDIN_FILENO);
               close(pipes[command_num - 1][0]);
+              close(pipes[command_num - 1][1]);
+              close(pipes[command_num][0]);
+              close(pipes[command_num][1]);
             }
             char *full_path = get_command_path(argv[0]);
             if (full_path != NULL)
@@ -583,6 +586,9 @@ void interactive_main(void)
           else
           {
             close(pipes[command_num - 1][0]);
+            close(pipes[command_num - 1][1]);
+            close(pipes[command_num][0]);
+            close(pipes[command_num][1]);
             wait(NULL);
           }
         }
@@ -602,7 +608,7 @@ void interactive_main(void)
           fflush(stdout);
           return;
         }
-        
+
         int pid = fork();
 
         if (pid < 0)
