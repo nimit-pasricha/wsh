@@ -501,6 +501,21 @@ int check_builtins(char *argv[], int argc)
   return res;
 }
 
+int is_builtin_command(char *cmd)
+{
+  if (cmd == NULL)
+    return 0;
+  const char *builtins[] = {"exit", "alias", "unalias", "which", "path", "cd", "history"};
+  for (int i = 0; i < 7; i++)
+  {
+    if (strcmp(cmd, builtins[i]) == 0)
+    {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 /***************************************************
  * Modes of Execution
  ***************************************************/
@@ -625,7 +640,7 @@ void interactive_main(void)
           is_valid_pipeline = 0;
           wsh_warn(EMPTY_PIPE_SEGMENT);
         }
-        else if (check_builtins(argv, argc) < 0 && (command_path = get_command_path(argv[0])) == NULL)
+        else if (!is_builtin_command(argv[0]) && (command_path = get_command_path(argv[0])) == NULL)
         {
           is_valid_pipeline = 0;
         }
@@ -845,7 +860,7 @@ int batch_main(const char *script_file)
           is_valid_pipeline = 0;
           wsh_warn(EMPTY_PIPE_SEGMENT);
         }
-        else if (check_builtins(argv, argc) < 0 && (command_path = get_command_path(argv[0])) == NULL)
+        else if (!is_builtin_command(argv[0]) && (command_path = get_command_path(argv[0])) == NULL)
         {
           is_valid_pipeline = 0;
         }
