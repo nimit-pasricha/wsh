@@ -110,13 +110,15 @@ char *get_command_path(char *command)
     return NULL;
   }
 
-  char *path = getenv("PATH");
-  if (path == NULL || *path == '\0')
+  char *path_env = getenv("PATH");
+  if (path_env == NULL || *path_env == '\0')
   {
     wsh_warn(EMPTY_PATH);
     return NULL;
   }
 
+  char *path = strdup(path_env);
+  char *path_head = path;
   char *token = strtok(path, ":");
   char *command_path = NULL;
   while (token != NULL)
@@ -124,16 +126,19 @@ char *get_command_path(char *command)
     if (asprintf(&command_path, "%s/%s", token, command) < 0)
     {
       free(command_path);
+      free(path_head);
       return NULL;
     }
     if (access(command_path, X_OK) == 0)
     {
+      free(path_head);
       return command_path;
     }
     token = strtok(NULL, ":");
+    free(command_path);
   }
 
-  free(command_path);
+  free(path_head);
   wsh_warn(CMD_NOT_FOUND, command);
   return NULL;
 }
