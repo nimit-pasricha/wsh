@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Just a minimal check to figure out if the code compiles and can run exit without crashing
+../solution/wsh tests/17.wsh
+
+failed=0
+
+for x in {1..13}; do
+    echo "Running test $x..."
+
+    # Run pre-hook if it exists
+    if [ -f "tests/$x.pre" ]; then
+        echo "➡️ Running pre-hook for test $x"
+        bash "tests/$x.pre" || {
+            echo "❌ Pre-hook for test $x failed, skipping test"
+            failed=1
+            continue
+        }
+    fi
+
+    # Run the test under valgrind
+    if ! valgrind --leak-check=full --show-leak-kinds=all \
+        --track-origins=yes --verbose \
+        ../solution/wsh "tests/$x.wsh" \
+        3>&1 2>&3 3>&- | grep -q "no leaks are possible"; then
+        echo "❌ Memory leaks detected in test $x"
+        failed=1
+    else
+        echo "✅ Test $x passed (no leaks)"
+    fi
+
+    # Run post-hook if it exists
+    if [ -f "tests/$x.post" ]; then
+        echo "➡️ Running post-hook for test $x"
+        bash "tests/$x.post" || {
+            echo "❌ Post-hook for test $x failed"
+            failed=1
+        }
+    fi
+done
+
+if [ $failed -eq 0 ]; then
+    echo "All tests passed (no leaks)"
+    exit 0
+else
+    echo "Some tests had memory leaks or hook failures"
+    exit 1
+fi
+
