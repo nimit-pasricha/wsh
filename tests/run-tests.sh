@@ -24,13 +24,13 @@ run_test () {
 	echo -n "test:      "
 	cat $testfile
     fi
-    eval $(cat $testfile) > tests-out/$testnum.out 2> tests-out/$testnum.err
+    bash $testfile > tests-out/$testnum.out 2> tests-out/$testnum.err
     echo $? > tests-out/$testnum.rc
 
     # post: execute this after the test is done, to clean up
     local postfile=$testdir/$testnum.post
     if [[ -f $postfile ]]; then
-	eval $(cat $postfile)
+	bash $postfile
 	if (( $verbose == 1 )); then
 	    echo -n "post-test: "
 	    cat $postfile
