@@ -1059,7 +1059,7 @@ int batch_main(const char *script_file)
           close(pipes[i][1]);
         }
 
-        // parent wait for every child to finish for reading next line.
+        // parent wait for every child to finish before reading next line.
         for (int i = 0; i < num_commands; i++)
         {
           int status;
