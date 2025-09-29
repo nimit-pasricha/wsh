@@ -660,6 +660,7 @@ void interactive_main(void)
     char *input_dup_for_history = strdup(input);
     char *subcommand;
 
+    // count number of commands separated by `|`
     while ((subcommand = strsep(&input_copy, "|")) != NULL && num_commands < MAX_ARGS)
     {
       commands[num_commands++] = subcommand;
@@ -782,11 +783,13 @@ void interactive_main(void)
 
           if (pid == 0)
           {
+            // first command should read from regular stdin
             if (i > 0)
             {
               dup2(pipes[i - 1][0], STDIN_FILENO);
             }
 
+            // last command should print to regular stdout
             if (i < num_commands - 1)
             {
               dup2(pipes[i][1], STDOUT_FILENO);
@@ -1003,10 +1006,12 @@ int batch_main(const char *script_file)
           else if (pids[i] == 0)
           {
             fclose(sfp);
+            // first command should read from regular stdin
             if (i > 0)
             {
               dup2(pipes[i - 1][0], STDIN_FILENO);
             }
+            // last command should write to regular stdout
             if (i < num_commands - 1)
             {
               dup2(pipes[i][1], STDOUT_FILENO);
@@ -1054,7 +1059,7 @@ int batch_main(const char *script_file)
           close(pipes[i][1]);
         }
 
-        // parent wait for every child to finish.
+        // parent wait for every child to finish for reading next line.
         for (int i = 0; i < num_commands; i++)
         {
           int status;
