@@ -98,8 +98,15 @@ int main(int argc, char **argv)
   return rc;
 }
 
+/**
+ * @brief Get the full path to the external `comand` executable
+ *
+ * @param command the name of the external command (eg: ls, echo)
+ * @return the full path to the command as a string.
+ */
 char *get_command_path(char *command)
 {
+  // user provides a path to the executable
   if (command[0] == '.' || command[0] == '/')
   {
     if (access(command, X_OK) == 0)
@@ -110,6 +117,7 @@ char *get_command_path(char *command)
     return NULL;
   }
 
+  // must find command in the locations in PATH.
   char *path_env = getenv("PATH");
   if (path_env == NULL || *path_env == '\0')
   {
@@ -117,12 +125,13 @@ char *get_command_path(char *command)
     return NULL;
   }
 
-  char *path = strdup(path_env);
+  char *path = strdup(path_env); // create copy b/c strtok is destructive.
   char *path_head = path;
   char *token = strtok(path, ":");
   char *command_path = NULL;
   while (token != NULL)
   {
+    // asprintf formats the string as specified. Must free.
     if (asprintf(&command_path, "%s/%s", token, command) < 0)
     {
       free(command_path);
@@ -143,6 +152,12 @@ char *get_command_path(char *command)
   return NULL;
 }
 
+/**
+ * @brief Free an array of char pointers.
+ * 
+ * @param argv array of char pointers to free
+ * @param argc number of elements in argv.
+ */
 void free_argv(char *argv[], int argc)
 {
   for (int i = 0; i < argc; i++)
@@ -151,6 +166,12 @@ void free_argv(char *argv[], int argc)
   }
 }
 
+/**
+ * @brief handle builtin command `exit` to exit shell.
+ * 
+ * @param argc number of arguments in user input.
+ * @return 0 if exit successfully, 1 if failed.
+ */
 int exit_shell(int argc)
 {
   if (argc > 1)
@@ -161,6 +182,14 @@ int exit_shell(int argc)
   return 0;
 }
 
+/**
+ * @brief handle builtin command `alias` to 
+ *        display aliases or create a new one.
+ * 
+ * @param argv args from user input
+ * @param argc number of args in user input.
+ * @return 0 if successfully created/displayed alias, 1 if failed.
+ */
 int create_alias(char *argv[], int argc)
 {
   if (argc > 4)
@@ -174,6 +203,7 @@ int create_alias(char *argv[], int argc)
     return 0;
   }
 
+  // check that '=' is exactly the 3rd argument
   int found_equals_at_correct_spot = 0;
   for (int i = 0; i < argc; i++)
   {
@@ -192,6 +222,7 @@ int create_alias(char *argv[], int argc)
     return 1;
   }
 
+  // confirm that name has exactly 1 word.
   char *name = argv[1];
   if (strlen(name) == 0)
   {
@@ -206,6 +237,7 @@ int create_alias(char *argv[], int argc)
     }
   }
 
+  // handle emptu alias (`alias test =`)
   if (argc == 3)
   {
     argv[4] = NULL;
@@ -216,8 +248,16 @@ int create_alias(char *argv[], int argc)
   return 0;
 }
 
+/**
+ * @brief substitute alias into user input
+ * 
+ * @param argv args from user input
+ * @param argc number of args from user input.
+ * @return 0 if successfully substituted alias, 1 if failed.
+ */
 int substitute_alias(char *argv[], int *argc)
 {
+  // Handle empty input. (user just pressed enter).
   if (*argc == 0)
   {
     return 0;
@@ -228,12 +268,15 @@ int substitute_alias(char *argv[], int *argc)
   int new_argc = 1;
   char *command = hm_get(alias_hm, argv[0]);
   int keep_going = 1;
-  while (command != NULL && keep_going)
+  while (command != NULL && keep_going) // deal with multiple layers of aliasing.
   {
     parseline_no_subst(command, new_argv, &new_argc);
 
+    // aliased to empty string.
     if (new_argc == 0)
     {
+      // if user just entered that one arg which aliases to empty string,
+      // then execute nothing.
       if (*argc == 1)
       {
         free_argv(argv, *argc);
@@ -243,6 +286,9 @@ int substitute_alias(char *argv[], int *argc)
       }
       else
       {
+        // Handle multiple args in case of empty alias.
+        // eg: if user enters `test echo 1` and test aliases to nothing,
+        // must execute `echo 1`.
         free(argv[0]);
         memmove(argv, argv + 1, (*argc - 1) * sizeof(char *));
         argv[*argc - 1] = NULL;
@@ -254,6 +300,7 @@ int substitute_alias(char *argv[], int *argc)
     }
 
     // Prevent infinite loop in case of circular alias.
+    // eg: `alias ls = pwd; alias pwd = ls`
     if (hm_get(seen_elements, argv[0]) != NULL)
     {
       hm_free(seen_elements);
@@ -268,8 +315,10 @@ int substitute_alias(char *argv[], int *argc)
 
     hm_put(seen_elements, argv[0], "");
 
-    memmove(argv + new_argc - 1, argv, *argc * sizeof(char *));
+    // make room for substituted command
+    memmove(argv + new_argc - 1, argv, *argc * sizeof(char *)); 
     free(argv[new_argc - 1]);
+    // attach substituted command to beginning of arguments.
     memmove(argv, new_argv, new_argc * sizeof(char *));
     command = hm_get(alias_hm, argv[0]);
   }
@@ -279,6 +328,13 @@ int substitute_alias(char *argv[], int *argc)
   return 0;
 }
 
+/**
+ * @brief handle builtin command `unalias` to delete alias.
+ * 
+ * @param argv args from user input
+ * @param argc number of args in user input
+ * @return 0 if successfully deleted alias, 1 if failed 
+ */
 int unalias(char *argv[], int argc)
 {
   if (argc == 2)
@@ -290,6 +346,14 @@ int unalias(char *argv[], int argc)
   return 1;
 }
 
+/**
+ * @brief handle builtin command `which` to specify 
+ *        what command will be executed when given specific command as input.
+ * 
+ * @param argv args from user input
+ * @param argc number of args in user input
+ * @return 0 if successfully finds the entered command, 1 if failed.
+ */
 int which_command(char *argv[], int argc)
 {
   if (argc != 2)
@@ -298,6 +362,7 @@ int which_command(char *argv[], int argc)
     return 1;
   }
 
+  // check if command is alias.
   char *name = argv[1];
   char *res;
   if ((res = hm_get(alias_hm, name)) != NULL)
@@ -306,6 +371,7 @@ int which_command(char *argv[], int argc)
     return 0;
   }
 
+  // check if command is builtin.
   char *builtins[7] = {"exit", "alias", "unalias", "which", "path", "cd", "history"};
   for (int i = 0; i < 7; i++)
   {
@@ -316,6 +382,7 @@ int which_command(char *argv[], int argc)
     }
   }
 
+  // check if command is user-specified executable.
   if (name[0] == '.' || name[0] == '/')
   {
     if (access(name, X_OK) == 0)
@@ -330,13 +397,15 @@ int which_command(char *argv[], int argc)
     }
   }
 
+  // check if path is empty.
   char *path = getenv("PATH");
   if (path == NULL || *path == '\0')
   {
     wsh_warn(EMPTY_PATH);
-    return -1;
+    return 1;
   }
 
+  // search the path for an external command
   char *token = strtok(path, ":");
   char *command_path = NULL;
   while (token != NULL)
@@ -360,6 +429,14 @@ int which_command(char *argv[], int argc)
   return 1;
 }
 
+/**
+ * @brief handle builtin command `path`
+ *        to get or set the PATH environment variable.
+ * 
+ * @param argv args from user input
+ * @param argc number of args in user input
+ * @return 0 if successfully get/set path, 1 if failed.
+ */
 int path_set_and_get(char *argv[], int argc)
 {
   char *path = getenv("PATH");
@@ -382,8 +459,16 @@ int path_set_and_get(char *argv[], int argc)
   return 1;
 }
 
+/**
+ * @brief handle builtin `cd` to change current working directory.
+ * 
+ * @param argv args from user input
+ * @param argc number of args in user input
+ * @return 0 if successfully changed directory, 1 if failed.
+ */
 int change_directory(char *argv[], int argc)
 {
+  // cd to user-specified directory.
   if (argc == 2)
   {
     if (chdir(argv[1]) == -1)
@@ -394,6 +479,7 @@ int change_directory(char *argv[], int argc)
     return 0;
   }
 
+  // cd to home.
   if (argc == 1)
   {
     char *home = getenv("HOME");
@@ -413,6 +499,12 @@ int change_directory(char *argv[], int argc)
   return 1;
 }
 
+/**
+ * @brief handle builtin `history` to show previous executed commands
+ * 
+ * @param argv args from user input.
+ * @param argc number of args in user input
+ */
 int show_history(char *argv[], int argc)
 {
   if (argc == 1)
@@ -422,6 +514,7 @@ int show_history(char *argv[], int argc)
   }
   if (argc == 2)
   {
+    // check if second arg is a number.
     char *endptr = " ";
     int i = strtol(argv[1], &endptr, 10);
     if (*endptr != '\0')
@@ -446,13 +539,16 @@ int show_history(char *argv[], int argc)
 }
 
 /**
- * Checks if command matches any builtins.
- * Returns: 0 if success
- *          1 if error
- *          2 if must exit.
- *         -1 if builtin not found.
+ * @brief Execute matching command any builtins.
+ * 
+ * @param argv args from user input
+ * @param argc number of args in user input
+ * @return 0 if success
+ *         1 if error
+ *         2 if must exit.
+ *        -1 if builtin not found.
  */
-int check_builtins(char *argv[], int argc)
+int execute_builtin(char *argv[], int argc)
 {
   int res;
   if (argc == 0)
@@ -506,6 +602,12 @@ int check_builtins(char *argv[], int argc)
   return res;
 }
 
+/**
+ * @brief check whether a command is builtin or not.
+ * 
+ * @param cmd name of command
+ * @return 0 if cmd is a builtin, 1 if not
+ */
 int is_builtin_command(char *cmd)
 {
   if (cmd == NULL)
@@ -591,7 +693,7 @@ void interactive_main(void)
         continue;
       }
 
-      int res = check_builtins(argv, argc);
+      int res = execute_builtin(argv, argc);
       if (res == 2) // 'exit' builtin.
       {
         free(input_dup_for_history);
@@ -706,7 +808,7 @@ void interactive_main(void)
               clean_exit(EXIT_FAILURE);
             }
 
-            int res = check_builtins(argv, argc);
+            int res = execute_builtin(argv, argc);
             if (res == 0 || res == 1 || res == 2)
             {
               free_argv(argv, argc);
@@ -800,7 +902,7 @@ int batch_main(const char *script_file)
         continue;
       }
 
-      int res = check_builtins(argv, argc);
+      int res = execute_builtin(argv, argc);
 
       if (res == 2) // 'exit' builtin.
       {
@@ -926,7 +1028,7 @@ int batch_main(const char *script_file)
               clean_exit(EXIT_FAILURE);
             }
 
-            int res = check_builtins(argv, argc);
+            int res = execute_builtin(argv, argc);
             if (res == 0 || res == 1 || res == 2)
             {
               free_argv(argv, argc);
