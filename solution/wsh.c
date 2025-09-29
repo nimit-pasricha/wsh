@@ -504,6 +504,7 @@ int change_directory(char *argv[], int argc)
  * 
  * @param argv args from user input.
  * @param argc number of args in user input
+ * @return 0 if successfully showed history, 1 otherwise.
  */
 int show_history(char *argv[], int argc)
 {
