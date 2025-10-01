@@ -618,10 +618,10 @@ int is_builtin_command(char *cmd)
   {
     if (strcmp(cmd, builtins[i]) == 0)
     {
-      return 1;
+      return 0;
     }
   }
-  return 0;
+  return 1;
 }
 
 /***************************************************
@@ -749,7 +749,7 @@ void interactive_main(void)
           is_valid_pipeline = 0;
           wsh_warn(EMPTY_PIPE_SEGMENT);
         }
-        else if (!is_builtin_command(argv[0]) && (command_path = get_command_path(argv[0])) == NULL)
+        else if (is_builtin_command(argv[0]) == 1 && (command_path = get_command_path(argv[0])) == NULL)
         {
           is_valid_pipeline = 0;
         }
@@ -971,7 +971,7 @@ int batch_main(const char *script_file)
           is_valid_pipeline = 0;
           wsh_warn(EMPTY_PIPE_SEGMENT);
         }
-        else if (!is_builtin_command(argv[0]) && (command_path = get_command_path(argv[0])) == NULL)
+        else if (is_builtin_command(argv[0]) == 1 && (command_path = get_command_path(argv[0])) == NULL)
         {
           is_valid_pipeline = 0;
         }
