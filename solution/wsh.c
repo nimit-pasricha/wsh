@@ -540,7 +540,7 @@ int show_history(char *argv[], int argc)
 }
 
 /**
- * @brief Execute matching command any builtins.
+ * @brief Execute command matching any builtins.
  * 
  * @param argv args from user input
  * @param argc number of args in user input
