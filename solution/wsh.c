@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 }
 
 /**
- * @brief Get the full path to the external `comand` executable
+ * @brief Get the full path to the external `command` executable
  *
  * @param command the name of the external command (eg: ls, echo)
  * @return the full path to the command as a string.
