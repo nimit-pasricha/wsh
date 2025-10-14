@@ -5,3 +5,4 @@ tests/tests-out/
 solution/build/
 solution/wsh
 solution/wsh-dbg
+.venv/
