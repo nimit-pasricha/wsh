@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Just a minimal check to figure out if the code compiles and can run exit without crashing
-../solution/wsh tests/17.wsh
+../src/wsh tests/17.wsh
 
 failed=0
 
@@ -21,7 +21,7 @@ for x in {1..13}; do
     # Run the test under valgrind
     if ! valgrind --leak-check=full --show-leak-kinds=all \
         --track-origins=yes --verbose \
-        ../solution/wsh "tests/$x.wsh" \
+        ../src/wsh "tests/$x.wsh" \
         3>&1 2>&3 3>&- | grep -q "no leaks are possible"; then
         echo "❌ Memory leaks detected in test $x"
         failed=1

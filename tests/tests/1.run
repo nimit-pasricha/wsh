@@ -1,1 +1,1 @@
-../solution/wsh <tests/1.wsh
+../src/wsh <tests/1.wsh
