@@ -1,100 +1,119 @@
-# Project 2 - Building a shell in C
+# WSH: A Simple Shell in C
 
-This is an individual programming project to help you practice and develop
-your understanding of the Process API in C. You will be building a simple
-toy shell that can execute commands, similar to the one you use every day.
+Welcome to **WSH**, a custom Unix shell written entirely in C. I made this project  to explore the operating system fundamentals, including process management, command execution, and inter-process communication.
 
-## Project Administration and Policies
 
-> [!important]
->
-> **Due date:** Tuesday, September 30th 2025, 11:59 PM
->
-> Follow all CS537 [project policies](Admin.md)
+## ✨ Features
 
-## Project Workflow
+WSH is designed to be a lightweight yet functional shell, supporting a range of essential features that users expect from a modern command-line interface.
 
-Your solution code will be tested in
-the [CS537 Docker container](https://git.doit.wisc.edu/cdis/cs/courses/cs537/useful-resources/cs537-docker).
-If you do not already have your container setup, follow the instructions in that repository to create the proper environment.
-After following those instructions you should have a `cs537-projects/`
-directory where you can clone **all** of the projects for this course.
+* **Interactive and Batch Modes**: Run WSH as an interactive prompt or execute commands from a script file.
+* **Command Execution**: Executes external commands by searching the `PATH` environment variable.
+* **Piping**: Chains multiple commands together using the `|` operator, allowing for complex data processing pipelines.
+* **Built-in Commands**: A robust set of internal commands that are handled directly by the shell without creating new processes.
+    * `exit`: Terminates the shell session.
+    * `cd [path]`: Changes the current working directory. If no path is given, it changes to the `HOME` directory.
+    * `path [new_path]`: Displays or modifies the `PATH` environment variable.
+    * `alias [name = value]`: Creates or lists command aliases. Supports multi-level substitution and detects circular dependencies.
+    * `unalias <name>`: Removes a previously defined alias.
+    * `which <command>`: Shows whether a command is a built-in, an alias, or an external executable.
+    * `history [n]`: Displays the command history or executes the nth command from history.
 
-Follow the suggested [workflow](Workflow.md) for development of your solution.
+---
 
---------------------------------------------------------------------------------
+## 🚀 Getting Started
 
-## Project Instructions
+Follow these instructions to build and run WSH on your local machine.
 
-> [!warning]
-> **⚠️This project will be checked for memory leaks!⚠️**
->
-> - Your shell must properly free all allocated memory before exiting.
-> - Use tools like `valgrind` or `gcc --sanitize=address` to check for
-    > memory leaks.
->
-> Example: `valgrind --leak-check=full --show-leak-kinds=all 
-> --track-origins=yes ./wsh`
+### Prerequisites
 
-### Background: What is a Shell?
+You'll need a C compiler (like `gcc` or `clang`) and `make` installed on your system.
 
-A **shell** is a command-line tool that acts as an interface between the users
-and the operating system. When you type commands in a terminal, you are
-actually interacting with a shell program (e.g., `bash`, `zsh`, `fish`, etc.).
+### Building the Shell
 
-The shell reads your input, interprets(parses) your commands, executes them
-and displays the output back to you.
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/nimit-pasricha/wsh.git
+    cd wsh/src/
+    ```
 
-### Learning Objectives for this Project
+2.  **Compile the source code**:
+    The project includes several source files for the shell logic and its underlying data structures. You can compile them all with the following command:
+    ```bash
+    make wsh
+    ```
 
-In this project, you will build a simple Unix shell called `wsh`. The shell
-is the heart of the command-line interface, and thus is central to the
-Unix/C programming environment. Knowing how the shell itself is built is the
-focus of this project. Specifically, you will learn about:
+### Running WSH
 
-- Process creation and management using system calls like `fork()`, `exec()`,
-  and `wait()`.
-- Communication between processes using pipes.
-- The shell and its internals.
+* **Interactive Mode**: Launch the shell and get a prompt.
+    ```bash
+    ./wsh
+    ```
 
-### Features of `wsh`
+* **Batch Mode**: Execute a file containing a series of shell commands.
+    ```bash
+    ./wsh your_script.wsh
+    ```
 
-Your shell, `wsh` should support the following features. Treat these as
-checkpoints for your implementation as well as the requirements for your
-final submission. We strongly recommend doing a second pass to check if all
-the components are working together correctly.
+---
 
-> [!important]
->
-> The grader will do a direct diff between your output/error/rc and the
-> expected output/error/rc. To help you with this, you can use the provided
-> preprocessor directives in `wsh.h` for the error messages. We have also
-> created a function `wsh_warn` to help you print to `stderr` easily.
->
-> **Examples**
-> ```c++
-> // Lets say you have a string variable `cmd`
-> char* cmd = "NonExistentCommand";
-> // You can do something like this to print the error message:
-> wsh_warn(CMD_NOT_FOUND, cmd);
-> 
-> // This works because we have defined CMD_NOT_FOUND in wsh.h as
-> #define CMD_NOT_FOUND "Command not found or not an executable: %s\n"
-> // We have setup the wsh_warn as a wrapper around vfprintf to print to 
-> // let you use string formatting with it.
-> ```
->
-> *Sidenote:* I call it `wsh_warn` because even if something goes wrong with
-> a command, the shell doesn't actually "crash" or "fail", it just prints a
-> warning and continues with the next command.
->
+## 💻 Usage and Examples
 
-1. [Modes of Execution](instructions/01_modes_of_execution.md)
-2. [Executing External Commands](instructions/02_executing_external_commands.md)
-3. [Builtin Commands](instructions/03_builtin_commands.md)
-4. [Supporting Pipelines](instructions/04_pipelines.md)
+Here are some examples of what you can do with WSH.
 
-At this point, your shell should be able to handle a variety of commands. We
-would recommend testing your shell with a variety of commands to ensure it
-works as expected. Try combining different features and see if your shell is
-handling them correctly.
+* **Execute an external command:**
+    ```
+    wsh> ls -l /tmp
+    ```
+
+* **Use pipes to combine commands:**
+    ```
+    wsh> cat wsh.c | grep "fork" | wc -l
+    ```
+
+* **Create and use an alias:**
+    ```
+    wsh> alias ll = 'ls -alF'
+    wsh> ll
+    ```
+
+* **Modify the PATH:**
+    ```
+    wsh> path /bin:/usr/bin:/usr/local/bin
+    ```
+
+---
+
+## 🛠️ Code Structure
+
+The shell's logic is primarily contained within `wsh.c` and is organized as follows:
+
+* **`main()`**: The entry point that determines whether to run in interactive or batch mode.
+* **`interactive_main()` & `batch_main()`**: The main loops for handling user input or reading from a script file.
+* **`parseline_no_subst()`**: A robust parser that splits a command line string into an array of arguments, respecting single-quoted strings.
+* **`execute_builtin()`**: A dispatcher that checks if a command is a built-in and, if so, calls the appropriate handler function (e.g., `change_directory()`, `create_alias()`).
+* **`get_command_path()`**: A utility function that searches the directories listed in the `PATH` environment variable to find an executable.
+* **Data Structures**: The shell leverages a custom **`HashMap`** for managing aliases and a **`DynamicArray`** for storing command history, demonstrating efficient data management in C.
+
+---
+
+## 🚧 TODO & Future Work
+
+This project is under active development. Here is the roadmap for planned features:
+
+-   [ ] **Advanced Terminal I/O**
+    -   [ ] Implement raw/canonical mode switching to capture individual keystrokes.
+    -   [ ] Add support for the **Up** and **Down** arrow keys to navigate through command history.
+    -   [ ] Implement a reverse history search triggered by `Ctrl+R`.
+
+-   [ ] **Shell Variables**
+    -   [ ] Add support for setting and unsetting local variables (e.g., `X='hello world'`).
+    -   [ ] Implement variable substitution in commands (e.g., `echo $MYVAR`).
+
+-   [ ] **Advanced Shell Features**
+    -   [ ] I/O Redirection (`>`, `>>`, `<`).
+    -   [ ] Background Processes (`&`).
+    -   [ ] Job Control (`jobs`, `fg`, `bg`).
+    -   [ ] Conditional Execution (`&&`, `||`).
+    -   [ ] Tab Completion for commands and file paths.
+    -   [ ] Globbing / Wildcard Expansion (`*`, `?`).
