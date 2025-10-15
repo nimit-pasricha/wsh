@@ -1,13 +1,13 @@
-# WSH: A Simple Shell in C
+# wsh: A Simple Shell in C
 
-Welcome to **WSH**, a custom Unix shell written entirely in C. I made this project  to explore the operating system fundamentals, including process management, command execution, and inter-process communication.
+wsh is a custom Unix shell written in C that implements core operating system features from the ground up, including process management, command execution, and inter-process communication.
 
 
 ## ✨ Features
 
-WSH is designed to be a lightweight yet functional shell, supporting a range of essential features that users expect from a modern command-line interface.
+wsh is designed to be a lightweight yet functional shell, supporting a range of essential features that users expect from a modern command-line interface.
 
-* **Interactive and Batch Modes**: Run WSH as an interactive prompt or execute commands from a script file.
+* **Interactive and Batch Modes**: Run wsh as an interactive prompt or execute commands from a script file.
 * **Command Execution**: Executes external commands by searching the `PATH` environment variable.
 * **Piping**: Chains multiple commands together using the `|` operator, allowing for complex data processing pipelines.
 * **Built-in Commands**: A robust set of internal commands that are handled directly by the shell without creating new processes.
@@ -23,7 +23,7 @@ WSH is designed to be a lightweight yet functional shell, supporting a range of 
 
 ## 🚀 Getting Started
 
-Follow these instructions to build and run WSH on your local machine.
+Follow these instructions to build and run wsh on your local machine.
 
 ### Prerequisites
 
@@ -43,7 +43,7 @@ You'll need a C compiler (like `gcc` or `clang`) and `make` installed on your sy
     make wsh
     ```
 
-### Running WSH
+### Running wsh
 
 * **Interactive Mode**: Launch the shell and get a prompt.
     ```bash
@@ -59,7 +59,7 @@ You'll need a C compiler (like `gcc` or `clang`) and `make` installed on your sy
 
 ## 💻 Usage and Examples
 
-Here are some examples of what you can do with WSH.
+Here are some examples of what you can do with wsh.
 
 * **Execute an external command:**
     ```
