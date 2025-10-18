@@ -1,4 +1,4 @@
-# wsh: A Unix Shell in C
+# wsh: Custom POSIX Shell in C
 
 wsh ("woosh") is a custom Unix shell written in C that implements core operating system features from the ground up, including process management, command execution, and inter-process communication.
 
