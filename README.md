@@ -1,13 +1,13 @@
-# wsh: Custom POSIX Shell in C
+# Custom POSIX Shell in C
 
-wsh ("woosh") is a custom Unix shell written in C that implements core operating system features from the ground up, including process management, command execution, and inter-process communication.
+This is a custom Unix shell written in C that implements core operating system features from the ground up, including process management, command execution, and inter-process communication.
 
 
 ## ✨ Features
 
-wsh is designed to be a lightweight yet functional shell, supporting a range of essential features that users expect from a modern command-line interface.
+Designed to be a lightweight yet functional shell, supporting a range of essential features that users expect from a modern command-line interface.
 
-* **Interactive and Batch Modes**: Run wsh as an interactive prompt or execute commands from a script file.
+* **Interactive and Batch Modes**: Run the shell as an interactive prompt or execute commands from a script file.
 * **Command Execution**: Executes external commands by searching the `PATH` environment variable.
 * **Piping**: Chains multiple commands together using the `|` operator, allowing for complex data processing pipelines.
 * **Built-in Commands**: A robust set of internal commands that are handled directly by the shell without creating new processes.
@@ -23,7 +23,7 @@ wsh is designed to be a lightweight yet functional shell, supporting a range of 
 
 ## 🚀 Getting Started
 
-Follow these instructions to build and run wsh on your local machine.
+Follow these instructions to build and run on your local machine.
 
 ### Prerequisites
 
@@ -33,60 +33,60 @@ You'll need a C compiler (like `gcc` or `clang`) and `make` installed on your sy
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://github.com/nimit-pasricha/wsh.git
-    cd wsh/src/
+    git clone https://github.com/nimit-pasricha/c-unix-shell.git
+    cd c-unix-shell/src/
     ```
 
 2.  **Compile the source code**:
     The project includes several source files for the shell logic and its underlying data structures. You can compile them all with the following command:
     ```bash
-    make wsh
+    make mysh
     ```
 
-### Running wsh
+### Running mysh
 
 * **Interactive Mode**: Launch the shell and get a prompt.
     ```bash
-    ./wsh
+    ./mysh
     ```
 
 * **Batch Mode**: Execute a file containing a series of shell commands.
     ```bash
-    ./wsh your_script.wsh
+    ./mysh your_script.sh
     ```
 
 ---
 
 ## 💻 Usage and Examples
 
-Here are some examples of what you can do with wsh.
+Here are some examples of what you can do.
 
 * **Execute an external command:**
-    ```
-    wsh> ls -l /tmp
+    ```bash
+    > ls -l /tmp
     ```
 
 * **Use pipes to combine commands:**
-    ```
-    wsh> cat wsh.c | grep "fork" | wc -l
+    ```bash
+    > cat main.c | grep "fork" | wc -l
     ```
 
 * **Create and use an alias:**
-    ```
-    wsh> alias ll = 'ls -alF'
-    wsh> ll
+    ```bash
+    > alias ll = 'ls -alF'
+    > ll
     ```
 
 * **Modify the PATH:**
-    ```
-    wsh> path /bin:/usr/bin:/usr/local/bin
+    ```bash
+    > path /bin:/usr/bin:/usr/local/bin
     ```
 
 ---
 
 ## 🛠️ Code Structure
 
-The shell's logic is primarily contained within `wsh.c` and is organized as follows:
+The shell's logic is primarily contained within `main.c` and is organized as follows:
 
 * **`main()`**: The entry point that determines whether to run in interactive or batch mode.
 * **`interactive_main()` & `batch_main()`**: The main loops for handling user input or reading from a script file.

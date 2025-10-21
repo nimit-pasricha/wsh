@@ -3,6 +3,6 @@
 .vscode/
 tests/tests-out/
 solution/build/
-solution/wsh
-solution/wsh-dbg
+solution/mysh
+solution/mysh-dbg
 .venv/
