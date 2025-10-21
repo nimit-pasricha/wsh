@@ -650,7 +650,7 @@ void interactive_main(void)
     char input[MAX_LINE + 1];
     if (fgets(input, sizeof(input), stdin) == NULL)
     {
-      fprintf(stderr, "fgets error\n");
+      printf("exit\n");
       break;
     }
 
