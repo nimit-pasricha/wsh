@@ -1,5 +1,5 @@
 #define _GNU_SOURCE
-#include "wsh.h"
+#include "main.h"
 
 #include <assert.h>
 #include <errno.h>
