@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS-common = -std=gnu18 -Wall -Wextra -Werror -pedantic
 CFLAGS = $(CFLAGS-common) -O2
 CFLAGS-dbg = $(CFLAGS-common) -Og -ggdb
-TARGET = main
+TARGET = mysh
 
 # Source files
 SRC = main.c dynamic_array.c utils.c hash_map.c

@@ -1,5 +1,5 @@
-#ifndef WSH_H
-#define WSH_H
+#ifndef MAIN_H
+#define MAIN_H
 
 /**************************************************
  * Constants
@@ -8,7 +8,7 @@
 #define MAX_ARGS 128  /* max args on a command line */
 
 #define PROMPT "> " /* prompt */
-#define INVALID_WSH_USE "Invalid usage of wsh. Correct format: wsh | wsh batch_file\n"
+#define INVALID_SH_USE "Invalid usage. Correct format: mysh | mysh batch_file.sh\n"
 
 #define CMD_NOT_FOUND "Command not found or not an executable: %s\n"
 #define EMPTY_PIPE_SEGMENT "Empty command segment in pipeline\n"
@@ -25,7 +25,7 @@
 #define INVALID_HISTORY_USE "Incorrect usage of history. Correct format: history | history n\n"
 
 #define WHICH_ALIAS "%s: aliased to '%s'\n"
-#define WHICH_BUILTIN "%s: wsh builtin\n"
+#define WHICH_BUILTIN "%s: shell builtin\n"
 #define WHICH_EXTERNAL "%s: found at %s\n"
 #define WHICH_NOT_FOUND "%s: not found\n"
 
@@ -48,8 +48,8 @@ void parseline_no_subst(const char *cmdline, char **argv, int *argc);
 /**************************************************
  * Helpers
  *************************************************/
-void wsh_free(void); /* Free global allocated memory */
+void sh_free(void); /* Free global allocated memory */
 void clean_exit(int return_code); /* Free allocated memory and exit */
-void wsh_warn(const char *msg, ...); /* Set the return code and print message to stderr */
+void sh_warn(const char *msg, ...); /* Set the return code and print message to stderr */
 
-#endif //WSH_H
+#endif //MAIN_H

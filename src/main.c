@@ -24,7 +24,7 @@ DynamicArray *history_da;
 /**
  * @Brief Free any allocated global resources
  */
-void wsh_free(void)
+void sh_free(void)
 {
   // Free any allocated resources here
   if (alias_hm != NULL)
@@ -46,7 +46,7 @@ void wsh_free(void)
  */
 void clean_exit(int return_code)
 {
-  wsh_free();
+  sh_free();
   exit(return_code);
 }
 
@@ -56,7 +56,7 @@ void clean_exit(int return_code)
  * @param msg The warning message format string
  * @param ... Additional arguments for the format string
  */
-void wsh_warn(const char *msg, ...)
+void sh_warn(const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
   setenv("PATH", "/bin", 1);
   if (argc > 2)
   {
-    wsh_warn(INVALID_WSH_USE);
+    sh_warn(INVALID_SH_USE);
     return EXIT_FAILURE;
   }
   switch (argc)
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   default:
     break;
   }
-  wsh_free();
+  sh_free();
   return rc;
 }
 
@@ -113,7 +113,7 @@ char *get_command_path(char *command)
     {
       return strdup(command);
     }
-    wsh_warn(CMD_NOT_FOUND, command);
+    sh_warn(CMD_NOT_FOUND, command);
     return NULL;
   }
 
@@ -121,7 +121,7 @@ char *get_command_path(char *command)
   char *path_env = getenv("PATH");
   if (path_env == NULL || *path_env == '\0')
   {
-    wsh_warn(EMPTY_PATH);
+    sh_warn(EMPTY_PATH);
     return NULL;
   }
 
@@ -148,7 +148,7 @@ char *get_command_path(char *command)
   }
 
   free(path_head);
-  wsh_warn(CMD_NOT_FOUND, command);
+  sh_warn(CMD_NOT_FOUND, command);
   return NULL;
 }
 
@@ -176,7 +176,7 @@ int exit_shell(int argc)
 {
   if (argc > 1)
   {
-    wsh_warn(INVALID_EXIT_USE);
+    sh_warn(INVALID_EXIT_USE);
     return 1;
   }
   return 0;
@@ -358,7 +358,7 @@ int which_command(char *argv[], int argc)
 {
   if (argc != 2)
   {
-    wsh_warn(INVALID_WHICH_USE);
+    sh_warn(INVALID_WHICH_USE);
     return 1;
   }
 
@@ -401,7 +401,7 @@ int which_command(char *argv[], int argc)
   char *path = getenv("PATH");
   if (path == NULL || *path == '\0')
   {
-    wsh_warn(EMPTY_PATH);
+    sh_warn(EMPTY_PATH);
     return 1;
   }
 
@@ -444,7 +444,7 @@ int path_set_and_get(char *argv[], int argc)
   {
     if (path == NULL)
     {
-      wsh_warn(EMPTY_PATH);
+      sh_warn(EMPTY_PATH);
       return 1;
     }
     printf("%s\n", path);
@@ -455,7 +455,7 @@ int path_set_and_get(char *argv[], int argc)
     setenv("PATH", argv[1], 1);
     return 0;
   }
-  wsh_warn(INVALID_PATH_USE);
+  sh_warn(INVALID_PATH_USE);
   return 1;
 }
 
@@ -485,7 +485,7 @@ int change_directory(char *argv[], int argc)
     char *home = getenv("HOME");
     if (home == NULL)
     {
-      wsh_warn(CD_NO_HOME);
+      sh_warn(CD_NO_HOME);
       return 1;
     }
     if (chdir(home) == -1)
@@ -495,7 +495,7 @@ int change_directory(char *argv[], int argc)
     }
     return 0;
   }
-  wsh_warn(INVALID_CD_USE);
+  sh_warn(INVALID_CD_USE);
   return 1;
 }
 
@@ -520,7 +520,7 @@ int show_history(char *argv[], int argc)
     int i = strtol(argv[1], &endptr, 10);
     if (*endptr != '\0')
     {
-      wsh_warn(HISTORY_INVALID_ARG);
+      sh_warn(HISTORY_INVALID_ARG);
       return 1;
     }
     else
@@ -531,11 +531,11 @@ int show_history(char *argv[], int argc)
         printf("%s", command);
         return 0;
       }
-      wsh_warn(HISTORY_INVALID_ARG);
+      sh_warn(HISTORY_INVALID_ARG);
       return 1;
     }
   }
-  wsh_warn(INVALID_HISTORY_USE);
+  sh_warn(INVALID_HISTORY_USE);
   return 1;
 }
 
@@ -569,7 +569,7 @@ int execute_builtin(char *argv[], int argc)
     res = create_alias(argv, argc);
     if (res == 1)
     {
-      wsh_warn(INVALID_ALIAS_USE);
+      sh_warn(INVALID_ALIAS_USE);
     }
   }
   else if (strcmp(argv[0], "unalias") == 0)
@@ -577,7 +577,7 @@ int execute_builtin(char *argv[], int argc)
     res = unalias(argv, argc);
     if (res == 1)
     {
-      wsh_warn(INVALID_UNALIAS_USE);
+      sh_warn(INVALID_UNALIAS_USE);
     }
   }
   else if (strcmp(argv[0], "which") == 0)
@@ -747,7 +747,7 @@ void interactive_main(void)
         if (argc == 0)
         {
           is_valid_pipeline = 0;
-          wsh_warn(EMPTY_PIPE_SEGMENT);
+          sh_warn(EMPTY_PIPE_SEGMENT);
         }
         else if (is_builtin_command(argv[0]) == 1 && (command_path = get_command_path(argv[0])) == NULL)
         {
@@ -806,7 +806,7 @@ void interactive_main(void)
             substitute_alias(argv, &argc);
             if (argc == 0)
             {
-              wsh_warn(EMPTY_PIPE_SEGMENT);
+              sh_warn(EMPTY_PIPE_SEGMENT);
               free_argv(argv, argc);
               free(input_dup_for_history);
               clean_exit(EXIT_FAILURE);
@@ -969,7 +969,7 @@ int batch_main(const char *script_file)
         if (argc == 0)
         {
           is_valid_pipeline = 0;
-          wsh_warn(EMPTY_PIPE_SEGMENT);
+          sh_warn(EMPTY_PIPE_SEGMENT);
         }
         else if (is_builtin_command(argv[0]) == 1 && (command_path = get_command_path(argv[0])) == NULL)
         {
@@ -1028,7 +1028,7 @@ int batch_main(const char *script_file)
             substitute_alias(argv, &argc);
             if (argc == 0)
             {
-              wsh_warn(EMPTY_PIPE_SEGMENT);
+              sh_warn(EMPTY_PIPE_SEGMENT);
               free(line_dup_for_history);
               free_argv(argv, argc);
               clean_exit(EXIT_FAILURE);
@@ -1141,7 +1141,7 @@ void parseline_no_subst(const char *cmdline, char **argv, int *argc)
       {
         /* Handle missing closing quote - Print `Missing closing quote` to
          * stderr */
-        wsh_warn(MISSING_CLOSING_QUOTE);
+        sh_warn(MISSING_CLOSING_QUOTE);
         free(buf);
         for (int i = 0; i < count; i++)
           free(argv[i]);

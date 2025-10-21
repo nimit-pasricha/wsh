@@ -1,11 +1,11 @@
 e: aliased to 'echo'
-alias: wsh builtin
-which: wsh builtin
-path: wsh builtin
-cd: wsh builtin
-history: wsh builtin
-exit: wsh builtin
-unalias: wsh builtin
+alias: shell builtin
+which: shell builtin
+path: shell builtin
+cd: shell builtin
+history: shell builtin
+exit: shell builtin
+unalias: shell builtin
 echo: found at /bin/echo
 cat: found at /bin/cat
 /bin/echo: found at /bin/echo
