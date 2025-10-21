@@ -7,7 +7,7 @@
 #define MAX_LINE 1024 /* max line size */
 #define MAX_ARGS 128  /* max args on a command line */
 
-#define PROMPT "wsh> " /* prompt */
+#define PROMPT "> " /* prompt */
 #define INVALID_WSH_USE "Invalid usage of wsh. Correct format: wsh | wsh batch_file\n"
 
 #define CMD_NOT_FOUND "Command not found or not an executable: %s\n"
