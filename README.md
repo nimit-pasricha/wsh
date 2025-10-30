@@ -52,7 +52,7 @@ You'll need a C compiler (like `gcc` or `clang`) and `make` installed on your sy
 
 * **Batch Mode**: Execute a file containing a series of shell commands.
     ```bash
-    ./wsh your_script.wsh
+    ./wsh your_script.sh
     ```
 
 ---
